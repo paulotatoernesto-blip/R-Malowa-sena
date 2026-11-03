@@ -1,0 +1,68 @@
+R-MALOWA SENA 2.0 — INSTRUÇÕES DE INSTALAÇÃO
+
+Repositório existente:
+https://github.com/paulotatoernesto-blip/R-Malowa-sena
+
+O código atual usa Supabase Auth, `profiles`, `groups`, `members` e `pays`. Os registos dessas tabelas são guardados na coluna `d` em formato JSON. Este pacote acrescenta o módulo RELATÓRIO DE CAMPO e uma tabela nova; não apaga nem substitui os dados atuais.
+
+1. FAZER CÓPIA DE SEGURANÇA
+- Faça uma cópia do repositório GitHub.
+- No Supabase, confirme que tem uma cópia de segurança dos dados.
+
+2. CRIAR A TABELA NOVA
+- Abra Supabase > SQL Editor.
+- Cole e execute todo o ficheiro `supabase-migration.sql`.
+- A migração cria apenas `field_reports` e as suas políticas/índices. Não elimina `profiles`, `groups`, `members` nem `pays`.
+
+3. ADICIONAR O FICHEIRO JAVASCRIPT
+- Carregue `field-report.js` para a raiz do repositório GitHub.
+- No `index.html`, imediatamente antes de `</body>`, acrescente:
+  `<script src="field-report.js"></script>`
+
+4. ADICIONAR O SEPARADOR
+No `index.html`, dentro do `<nav role="tablist">`, acrescente:
+`<button class="tab" role="tab" data-t="f" aria-selected="false">RELATÓRIO DE CAMPO</button>`
+
+5. ADICIONAR O PAINEL
+No `index.html`, junto dos outros painéis `t-g`, `t-h` e `t-d`, acrescente:
+`<div id="t-f" class="hide"><div id="rm-field-report-root"></div></div>`
+
+6. ATUALIZAR A FUNÇÃO showTab
+No código JavaScript atual, procure:
+`["g","h","d"].forEach(function(k){`
+e substitua por:
+`["g","h","d","f"].forEach(function(k){`
+
+7. LIGAR O MÓDULO AO LOGIN
+Dentro da função `entrar(sess)`, localize o bloco que carrega as tabelas. Substitua:
+`Promise.all(COLS.map(function(c){return load(c)})).then(render);`
+
+por esta versão, para garantir que os grupos são carregados antes de iniciar o módulo:
+`Promise.all(COLS.map(function(c){return load(c)})).then(function(){render();if(window.RMFieldReport){RMFieldReport.init({supabase:SB,getGroups:function(){return S.groups;},getUser:function(){return{id:UID,email:EMAIL,isAdmin:ADMIN};}});}});`
+
+A chamada deve ficar dentro de `entrar(sess)`, depois de `SB`, `S`, `UID`, `EMAIL` e `ADMIN` estarem definidos.
+
+8. PUBLICAR E TESTAR
+- Guarde as alterações no GitHub.
+- Aguarde a publicação do GitHub Pages.
+- Abra a aplicação e entre com um utilizador de teste.
+- Abra o separador RELATÓRIO DE CAMPO.
+- Selecione um grupo, mês e ano.
+- Registe 12 horas e 3 estudos para Pioneiros regulares.
+- Registe mais 8 horas e 2 estudos na mesma categoria e período.
+- O resumo deve mostrar 20 horas e 5 estudos para o grupo.
+- Faça o mesmo para Pioneiros auxiliares e Publicadores e confirme que aparecem separados.
+- Entre com um segundo representante autorizado e confirme que os totais são partilhados.
+
+REGRAS DO RELATÓRIO
+- O registo é por grupo e categoria, não por pessoa.
+- As horas e os estudos dirigidos são somados automaticamente por grupo, categoria, mês e ano.
+- O campo de horas aceita frações (por exemplo, 1,5 horas).
+- Só o administrador pode eliminar registos através da interface.
+
+SEGURANÇA E LIMITAÇÕES
+- Mantenha o `config.js` atual e use apenas a chave pública `sb_publishable_`.
+- Nunca coloque `sb_secret_` ou `service_role` no HTML, JavaScript ou GitHub.
+- A migração fornecida dá acesso à tabela de relatórios a utilizadores autenticados. Antes de utilizar dados reais, confirme que o Supabase só permite autenticação de representantes aprovados; ajuste as políticas RLS se o projeto tiver uma tabela de autorização adicional.
+- A Pasta Privada com senha geral NÃO está incluída neste pacote inicial. Não guarde essa senha em JavaScript, HTML ou `localStorage`; a verificação deve ser feita no servidor com políticas RLS.
+- Este pacote é a primeira etapa funcional do R-MALOWA SENA 2.0, focada no RELATÓRIO DE CAMPO. Não afirma que despesas, mensagens, recibos, notificações, fotos e Pasta Privada já estejam implementados.
