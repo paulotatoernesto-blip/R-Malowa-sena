@@ -315,5 +315,199 @@ if(!window.supabase||!C.url||C.url.indexOf("COLE")===0){
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
 })();
 </script>
+<!-- ABA RELATÓRIO DE CAMPO -->
+<button class="tab"
+        type="button"
+        role="tab"
+        data-t="f"
+        aria-selected="false">
+  RELATÓRIO DE CAMPO
+</button>
+
+<!-- PAINEL -->
+<div id="t-f" class="tab-content">
+
+  <h2>RELATÓRIO DE CAMPO — R-MALOWA SENA 2.0</h2>
+
+  <!-- ACESSO PRIVADO -->
+  <section id="private-access-section">
+    <h3>🔒 Pasta Privada</h3>
+    <p>Introduza a senha geral da Pasta Privada.</p>
+
+    <input
+      type="password"
+      id="private-password"
+      placeholder="Senha de acesso"
+      autocomplete="current-password"
+    >
+
+    <button type="button" onclick="verificarAcessoPrivado()">
+      🔑 Abrir Pasta
+    </button>
+
+    <p id="access-message" role="alert" hidden></p>
+  </section>
+
+  <!-- CONTEÚDO PROTEGIDO -->
+  <section id="relatorio-conteudo" hidden>
+
+    <!-- PERÍODO -->
+    <div>
+      <h3>📅 Período do Relatório</h3>
+
+      <label for="rel-mes">Mês:</label>
+      <select id="rel-mes">
+        <option value="1">Janeiro</option>
+        <option value="2">Fevereiro</option>
+        <option value="3">Março</option>
+        <option value="4">Abril</option>
+        <option value="5">Maio</option>
+        <option value="6">Junho</option>
+        <option value="7">Julho</option>
+        <option value="8">Agosto</option>
+        <option value="9">Setembro</option>
+        <option value="10">Outubro</option>
+        <option value="11">Novembro</option>
+        <option value="12">Dezembro</option>
+      </select>
+
+      <label for="rel-ano">Ano:</label>
+      <select id="rel-ano"></select>
+
+      <button type="button" onclick="carregarRelatorio()">
+        📋 Carregar
+      </button>
+
+      <button type="button" onclick="exportarRelatorio()">
+        📥 Exportar
+      </button>
+    </div>
+
+    <!-- GRUPO -->
+    <div>
+      <label for="sel-grupo">🏕️ Grupo de Campo:</label>
+      <select id="sel-grupo">
+        <option value="">Selecione um grupo</option>
+      </select>
+    </div>
+
+    <!-- TABELA REUTILIZADA PARA AS 3 CATEGORIAS -->
+    <h3>🟦 Pioneiros Regulares</h3>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Estudos Dirigidos</th>
+            <th>Horas de Campo</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-regulares">
+          <tr><td colspan="3">Sem registos</td></tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th>Subtotal</th>
+            <th id="sub-reg-estudos">0</th>
+            <th id="sub-reg-horas">0</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <h3>🟩 Pioneiros Auxiliares</h3>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Estudos Dirigidos</th>
+            <th>Horas de Campo</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-auxiliares">
+          <tr><td colspan="3">Sem registos</td></tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th>Subtotal</th>
+            <th id="sub-aux-estudos">0</th>
+            <th id="sub-aux-horas">0</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <h3>🟨 Publicadores</h3>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Estudos Dirigidos</th>
+            <th>Horas de Campo</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-publicadores">
+          <tr><td colspan="3">Sem registos</td></tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th>Subtotal</th>
+            <th id="sub-pub-estudos">0</th>
+            <th id="sub-pub-horas">0</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- RESUMO -->
+    <section>
+      <h3>📊 Resumo Geral do Mês</h3>
+      <p>Total de estudos: <strong id="total-estudos">0</strong></p>
+      <p>Total de horas: <strong id="total-horas">0</strong></p>
+    </section>
+
+    <!-- REGISTAR ATIVIDADE -->
+    <section>
+      <h3>➕ Registar Nova Atividade</h3>
+
+      <label for="act-membro">Pessoa:</label>
+      <select id="act-membro">
+        <option value="">Selecione uma pessoa</option>
+      </select>
+
+      <label for="act-data">Data:</label>
+      <input type="date" id="act-data">
+
+      <label for="act-saida">Hora de saída:</label>
+      <input type="time" id="act-saida">
+
+      <label for="act-regresso">Hora de regresso:</label>
+      <input type="time" id="act-regresso">
+
+      <label for="act-estudos">Estudos dirigidos:</label>
+      <input type="number"
+             id="act-estudos"
+             min="0"
+             step="1"
+             value="0">
+
+      <label for="act-horas">Horas calculadas:</label>
+      <input type="text" id="act-horas" readonly>
+
+      <button type="button" onclick="guardarAtividade()">
+        💾 Guardar Registo
+      </button>
+
+      <p id="activity-message" role="status"></p>
+    </section>
+
+  </section>
+</div>
+
+<!-- JAVASCRIPT -->
+<script src="field-report.js"></script>
+
 </body>
 </html>
