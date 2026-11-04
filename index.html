@@ -1,139 +1,310 @@
-            <th>Field Hours</th>
-          </tr>
-        </thead>
-        <tbody id="tbl-regulares">
-          <tr><td colspan="3">No records</td></tr>
-        </tbody>
-        <tfoot>
-          <tr>
-            <th>Subtotal</th>
-            <th id="sub-reg-estudos">0</th>
-            <th id="sub-reg-hours">0</th>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R-MALOWA SENA 2.0</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f5f7fa; color: #333; line-height: 1.6; }
+        header { background: #2c5f2d; color: white; padding: 20px; text-align: center; }
+        header h1 { font-size: 22px; margin-bottom: 5px; }
+        header p { font-size: 14px; opacity: 0.9; }
+        
+        .tabs { display: flex; flex-wrap: wrap; background: white; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 100; }
+        .tab-btn { padding: 12px 10px; background: white; border: none; cursor: pointer; font-size: 13px; color: #555; transition: all 0.2s; }
+        .tab-btn.active { background: #2c5f2d; color: white; font-weight: bold; }
+        .tab-btn:hover { background: #e8f4e8; }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card h2 { font-size: 18px; color: #2c5f2d; margin-bottom: 15px; border-bottom: 2px solid #e8f4e8; padding-bottom: 8px; }
+        .card h3 { font-size: 15px; margin: 15px 0 10px; color: #444; }
+        
+        .btn { padding: 10px 16px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; margin: 5px 5px 5px 0; }
+        .btn-primary { background: #2c5f2d; color: white; }
+        .btn-primary:hover { background: #234d24; }
+        .btn-success { background: #4CAF50; color: white; }
+        .btn-danger { background: #f44336; color: white; }
+        
+        input, select, button { padding: 8px 10px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #2c5f2d; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0; }
+        .stat-box { background: linear-gradient(135deg, #2c5f2d, #3d7a3e); color: white; padding: 20px; border-radius: 8px; text-align: center; }
+        .stat-box h3 { font-size: 30px; margin-bottom: 5px; }
+        .stat-box p { font-size: 13px; opacity: 0.9; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 14px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #e8f4e8; color: #2c5f2d; font-weight: bold; }
+        tr:hover { background: #f9f9f9; }
+        
+        .locked { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 5px; text-align: center; }
+        .hidden-section { opacity: 0.5; pointer-events: none; }
+        .unlocked { opacity: 1; pointer-events: auto; transition: all 0.3s; }
+        
+        .tag { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .tag-green { background: #d4edda; color: #155724; }
+        .tag-yellow { background: #fff3cd; color: #856404; }
+        .tag-red { background: #f8d7da; color: #721c24; }
+        
+        .note { background: #e3f2fd; border-left: 4px solid #2196F3; padding: 12px; margin: 15px 0; font-size: 14px; }
+    </style>
+</head>
+<body>
 
-    <h3>🟩 Auxiliary Pioneers</h3>
-    <div class="table-responsive">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Directed Studies</th>
-            <th>Field Hours</th>
-          </tr>
-        </thead>
-        <tbody id="tbl-auxiliares">
-          <tr><td colspan="3">No records</td></tr>
-        </tbody>
-        <tfoot>
-          <tr>
-            <th>Subtotal</th>
-            <th id="sub-aux-estudos">0</th>
-            <th id="sub-aux-hours">0</th>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+<header>
+    <h1>📊 R-MALOWA SENA 2.0</h1>
+    <p>Registo de Grupos • Finanças • Relatórios de Campo • Estatísticas</p>
+    <p id="user-status" style="font-size:12px; margin-top:8px;">Não autenticado — algumas áreas estão bloqueadas</p>
+</header>
 
-    <h3>🟨 Publishers</h3>
-    <div class="table-responsive">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Directed Studies</th>
-            <th>Field Hours</th>
-          </tr>
-        </thead>
-        <tbody id="tbl-publicadores">
-          <tr><td colspan="3">No records</td></tr>
-        </tbody>
-        <tfoot>
-          <tr>
-            <th>Subtotal</th>
-            <th id="sub-pub-estudos">0</th>
-
-<th id="sub-pub-horas">0</th>
-
-</tr>
-
-</tfoot>
-
-</table>
-
+<div class="tabs">
+    <button class="tab-btn active" data-tab="dashboard">📈 Painel Principal</button>
+    <button class="tab-btn" data-tab="groups">👥 Grupos</button>
+    <button class="tab-btn" data-tab="members">📋 Membros</button>
+    <button class="tab-btn" data-tab="contributions">💰 Contribuições</button>
+    <button class="tab-btn" data-tab="finance">🏦 Finanças</button>
+    <button class="tab-btn" data-tab="field">⛺ Relatório de Campo</button>
+    <button class="tab-btn" data-tab="stats">📊 Estatísticas</button>
+    <button class="tab-btn" data-tab="private">🔒 Pasta Privada</button>
+    <button class="tab-btn" data-tab="users">👤 Utilizadores</button>
+    <button class="tab-btn" data-tab="settings">⚙️ Definições</button>
 </div>
 
-<!-- SUMMARY -->
+<div class="container">
 
-<section>
+    <!-- 🔹 PAINEL PRINCIPAL -->
+    <div id="dashboard" class="tab-content active">
+        <div class="card">
+            <h2>📊 Painel Principal — Resumo Geral</h2>
+            <p style="color:#666; font-size:14px; margin-bottom:20px;">Visão geral de todos os grupos e resultados</p>
+            
+            <div class="grid">
+                <div class="stat-box">
+                    <h3 id="total-groups">0</h3>
+                    <p>Grupos Registados</p>
+                </div>
+                <div class="stat-box">
+                    <h3 id="total-members">0</h3>
+                    <p>Total de Membros</p>
+                </div>
+                <div class="stat-box">
+                    <h3 id="total-pioneers">0</h3>
+                    <p>Pioneiros</p>
+                </div>
+                <div class="stat-box">
+                    <h3 id="total-publishers">0</h3>
+                    <p>Publicadores</p>
+                </div>
+                <div class="stat-box">
+                    <h3 id="total-income">0 MT</h3>
+                    <p>Total Recebido</p>
+                </div>
+                <div class="stat-box">
+                    <h3 id="total-hours">0h</h3>
+                    <p>Horas de Campo</p>
+                </div>
+            </div>
+            
+            <div class="note">
+                <strong>ℹ️ Nota:</strong> Os números serão atualizados automaticamente à medida que registares grupos e atividades.
+            </div>
+        </div>
+    </div>
 
-<h3>📊 General Summary of the Month</h3>
-<p>Total studies: <strong id="total-estudos">0</strong></p>
+    <!-- 🔹 GRUPOS -->
+    <div id="groups" class="tab-content">
+        <div class="card">
+            <h2>👥 Registo de Grupos</h2>
+            
+            <div style="background:#f9f9f9; padding:15px; border-radius:5px; margin-bottom:20px;">
+                <h3>➕ Novo Grupo</h3>
+                <input type="text" id="group-name" placeholder="Nome do grupo">
+                <input type="text" id="group-rep" placeholder="Nome do representante">
+                <input type="text" id="group-phone" placeholder="Telefone">
+                <input type="text" id="group-area" placeholder="Bairro / Zona">
+                <button class="btn btn-primary" onclick="criarGrupo()">💾 Guardar Grupo</button>
+            </div>
+            
+            <h3>Lista de Grupos</h3>
+            <table id="groups-table">
+                <thead>
+                    <tr>
+                        <th>Nome do Grupo</th>
+                        <th>Representante</th>
+                        <th>Telefone</th>
+                        <th>Local</th>
+                        <th>Estado</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="groups-list">
+                    <tr><td colspan="6" style="text-align:center; color:#888;">Ainda sem grupos registados</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-<p>Total hours: <strong id="total-horas">0</strong></p>
+    <!-- 🔹 MEMBROS -->
+    <div id="members" class="tab-content">
+        <div class="card">
+            <h2>📋 Gestão de Membros</h2>
+            
+            <div style="background:#f9f9f9; padding:15px; border-radius:5px; margin-bottom:20px;">
+                <h3>➕ Adicionar Membro</h3>
+                <select id="member-group">
+                    <option value="">-- Selecione o grupo --</option>
+                </select>
+                <input type="text" id="member-name" placeholder="Nome completo">
+                <input type="text" id="member-phone" placeholder="Telefone (opcional)">
+                <select id="member-category">
+                    <option value="">-- Categoria --</option>
+                    <option value="regular">🟢 Pioneiro Regular</option>
+                    <option value="auxiliary">🟡 Pioneiro Auxiliar</option>
+                    <option value="publisher">🟠 Publicador</option>
+                </select>
+                <button class="btn btn-primary" onclick="adicionarMembro()">💾 Guardar Membro</button>
+            </div>
+            
+            <h3>Lista de Membros</h3>
+            <select id="filter-group" onchange="filtrarMembros()">
+                <option value="">-- Todos os grupos --</option>
+            </select>
+            <table id="members-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Grupo</th>
+                        <th>Categoria</th>
+                        <th>Telefone</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="members-list">
+                    <tr><td colspan="5" style="text-align:center; color:#888;">Ainda sem membros registados</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-</section>
+    <!-- 🔹 CONTRIBUIÇÕES -->
+    <div id="contributions" class="tab-content">
+        <div class="card">
+            <h2>💰 Contribuições Mensais</h2>
+            
+            <div style="background:#f9f9f9; padding:15px; border-radius:5px; margin-bottom:20px;">
+                <h3>📝 Registar Contribuição</h3>
+                <select id="contrib-group">
+                    <option value="">-- Selecione o grupo --</option>
+                </select>
+                <select id="contrib-member">
+                    <option value="">-- Selecione o membro --</option>
+                </select>
+                <select id="contrib-month">
+                    <option value="1">Janeiro</option>
+                    <option value="2">Fevereiro</option>
+                    <option value="3">Março</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Maio</option>
+                    <option value="6">Junho</option>
+                    <option value="7">Julho</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Setembro</option>
+                    <option value="10">Outubro</option>
+                    <option value="11">Novembro</option>
+                    <option value="12">Dezembro</option>
+                </select>
+                <input type="number" id="contrib-year" value="2026" style="width:80px;">
+                <input type="number" id="contrib-value" placeholder="Valor em MT" step="0.01">
+                <button class="btn btn-primary" onclick="registarContribuicao()">💾 Guardar</button>
+            </div>
+            
+            <h3>Histórico de Contribuições</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Membro</th>
+                        <th>Grupo</th>
+                        <th>Mês/Ano</th>
+                        <th>Valor (MT)</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="contrib-list">
+                    <tr><td colspan="5" style="text-align:center; color:#888;">Sem registos ainda</td></tr>
+                </tbody>
+            </table>
+            <p style="margin-top:15px; font-weight:bold;">Total recebido: <span id="contrib-total">0.00 MT</span></p>
+        </div>
+    </div>
 
-<!-- REGISTER ACTIVITY -->
+    <!-- 🔹 FINANÇAS -->
+    <div id="finance" class="tab-content">
+        <div class="card">
+            <h2>🏦 Gestão Financeira — Receitas e Despesas</h2>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+                <div style="background:#e8f5e9; padding:15px; border-radius:5px;">
+                    <h3 style="color:#2e7d32;">➕ Nova Receita</h3>
+                    <input type="text" id="income-desc" placeholder="Descrição">
+                    <input type="number" id="income-value" placeholder="Valor em MT" step="0.01">
+                    <input type="date" id="income-date">
+                    <button class="btn btn-success" onclick="registarReceita()">💾 Guardar Receita</button>
+                </div>
+                
+                <div style="background:#ffebee; padding:15px; border-radius:5px;">
+                    <h3 style="color:#c62828;">➖ Nova Despesa</h3>
+                    <input type="text" id="expense-desc" placeholder="Motivo">
+                    <input type="number" id="expense-value" placeholder="Valor em MT" step="0.01">
+                    <input type="date" id="expense-date">
+                    <button class="btn btn-danger" onclick="registarDespesa()">💾 Guardar Despesa</button>
+                </div>
+            </div>
+            
+            <div style="background:#f5f5f5; padding:20px; border-radius:5px; text-align:center; font-size:18px; margin-bottom:20px;">
+                <strong>💰 Saldo Disponível: <span id="balance">0.00 MT</span></strong>
+            </div>
+            
+            <h3>Movimentos</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Entrada (MT)</th>
+                        <th>Saída (MT)</th>
+                    </tr>
+                </thead>
+                <tbody id="finance-list">
+                    <tr><td colspan="4" style="text-align:center; color:#888;">Sem movimentos ainda</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-<section>
-
-<h3>➕ Register New Activity</h3>
-
-<label for="act-membro">Person:</label>
-
-<select id="act-membro">
-
-<option value="">Select a person</option>
-
-</select>
-
-<label for="act-data">Date:</label>
-
-<input type="date" id="act-data">
-
-<label for="act-saida">Departure Time:</label>
-
-<input type="time" id="act-saida">
-
-<label for="act-regresso">Return Time:</label>
-
-<input type="time" id="act-regresso">
-
-<label for="act-estudos">Directed Studies:</label>
-
-<input type="number"
-id="act-estudos"
-min="0"
-step="1"
-value="0">
-
-<label for="act-horas">Calculated Hours:</label>
-
-<input type="text" id="act-horas" readonly>
-
-<button type="button" onclick="guardarAtividade()">
-
-💾 Save Record
-
-</button>
-
-<p id="activity-message" role="status"></p>
-    </section>
-
-  </section>
-</div>
-
-
-<<!-- JAVASCRIPT -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
-<script src="field-report.js"></script>
->
-
-</body>
-</html>
-
- 
+    <!-- 🔹 RELATÓRIO DE CAMPO -->
+    <div id="field" class="tab-content">
+        <div class="card">
+            <h2>⛺ Relatório de Campo</h2>
+            
+            <div style="background:#f9f9f9; padding:15px; border-radius:5px; margin-bottom:20px;">
+                <select id="report-group">
+                    <option value="">-- Selecione o grupo --</option>
+                </select>
+                <select id="report-month">
+                    <option value="1">Janeiro</option>
+                    <option value="2">Fevereiro</option>
+                    <option value="3">Março</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Maio</option>
+                    <option value="6">Junho</option>
+                    <option value="7">Julho</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Setembro</option>
+                    <option
