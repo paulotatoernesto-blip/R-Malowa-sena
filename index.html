@@ -1,513 +1,139 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>R-MALOWA SENA</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0b6b4f">
-<link rel="icon" href="icon-192.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="config.js"></script>
-<style>
-:root{--bg:#f4f7f4;--sf:#fff;--tx:#15211b;--mu:#5b6b62;--ln:#d5ded8;--ac:#0b6b4f;--on:#fff;--ac2:#e8f3ee;--wa:#a35a00;--wb:#fff3e0;--er:#b3261e;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101814;--sf:#18221c;--tx:#e7efe9;--mu:#9bada2;--ln:#2d3b33;--ac:#5fcf9f;--on:#08150f;--ac2:#1d3328;--wa:#ffb85c;--wb:#33260f;--er:#ff8a80}}
-:root[data-theme="dark"]{--bg:#101814;--sf:#18221c;--tx:#e7efe9;--mu:#9bada2;--ln:#2d3b33;--ac:#5fcf9f;--on:#08150f;--ac2:#1d3328;--wa:#ffb85c;--wb:#33260f;--er:#ff8a80}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 "Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:860px;margin:0 auto;padding:16px 14px 40px}
-h1{font-size:1.35rem;margin:4px 0 2px}
-h2{font-size:1.05rem;margin:0 0 8px}
-.sub{color:var(--mu);margin:0 0 12px;font-size:.92rem}
-.bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
-select,input,button,textarea{font:inherit;color:var(--tx);background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:9px 10px;min-height:42px}
-button{cursor:pointer;background:var(--ac);color:var(--on);border-color:var(--ac);font-weight:700}
-button.alt{background:var(--sf);color:var(--tx);border-color:var(--ln);font-weight:400}
-button.bad{background:var(--sf);color:var(--er);border-color:var(--er)}
-button.tab{background:none;color:var(--mu);border:0;border-bottom:3px solid transparent;border-radius:0}
-button.tab[aria-selected="true"]{color:var(--ac);border-bottom-color:var(--ac)}
-nav{display:flex;gap:4px;border-bottom:1px solid var(--ln);margin-bottom:14px;overflow-x:auto}
-:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
-.box{background:var(--sf);border:1px solid var(--ln);border-radius:10px;padding:14px;margin-bottom:14px}
-.info{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px 16px;font-size:.92rem}
-.info b{display:block;color:var(--mu);font-weight:400;font-size:.82rem}
-.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
-.row input,.row select{flex:1 1 140px;min-width:0}
-label.f{display:block;font-size:.85rem;color:var(--mu);margin-top:10px}
-label.f input{display:block;width:100%;margin-top:3px;color:var(--tx)}
-.wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:560px;font-variant-numeric:tabular-nums}
-th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--ln);vertical-align:top}
-th{font-size:.85rem;color:var(--mu);font-weight:700;border-bottom:2px solid var(--ln)}
-td.n,th.n{text-align:right}
-tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ln);background:var(--ac2)}
-.chip{display:inline-flex;align-items:center;gap:4px;background:var(--ac2);border-radius:99px;padding:1px 4px 1px 9px;margin:0 4px 4px 0;font-size:.9rem}
-.chip button{min-height:26px;padding:0 7px;background:none;border:0;color:var(--mu);font-weight:400}
-.st{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.85rem;background:var(--ac2);color:var(--ac)}
-.st.w{background:var(--wb);color:var(--wa)}
-.st.z{background:none;color:var(--mu);border:1px solid var(--ln)}
-textarea{width:100%;min-height:90px;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--bg)}
-.note{font-size:.85rem;color:var(--mu);margin:8px 0 0}
-.pill{display:inline-block;font-size:.82rem;padding:2px 10px;border-radius:99px;background:var(--wb);color:var(--wa)}
-.pill.on{background:var(--ac2);color:var(--ac)}
-.mem{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--ln)}
-#msg{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));background:var(--tx);color:var(--bg);padding:10px 14px;border-radius:10px;z-index:9}
-#login{max-width:420px;margin:10vh auto 0;padding:0 14px}
-.hide{display:none!important}
-</style>
-</head>
-<body>
-<div id="login" class="hide"><h1>R-MALOWA SENA</h1><p class="sub">Entre com o email e a palavra-passe criados pelo administrador.</p>
-<label class="f">Email<input id="lEmail" type="email" autocomplete="username"></label>
-<label class="f">Palavra-passe<input id="lPass" type="password" autocomplete="current-password"></label>
-<div class="row"><button id="bEntrar">Entrar</button></div><p class="note" id="lerr" style="color:var(--er)"></p></div>
-<main id="app" class="hide">
-<h1>R-MALOWA SENA</h1>
-<p class="sub">Registo de Malowa-Sena <span id="modo" class="pill">A ligar…</span></p>
-<nav role="tablist">
-  <button class="tab" role="tab" data-t="g" aria-selected="true">Grupos</button>
-  <button class="tab" role="tab" data-t="h" aria-selected="false">Histórico</button>
-  <button class="tab" role="tab" data-t="d" aria-selected="false">Definições</button>
-</nav>
-
-<div id="t-g">
-  <div class="bar"><select id="gSel" aria-label="Grupo"></select><select id="mSel" aria-label="Mês"></select><select id="aSel" aria-label="Ano"></select><button class="alt" id="bNovoG">Novo grupo</button></div>
-  <section class="box hide" id="novoG">
-    <h2>Novo grupo</h2>
-    <div class="row"><input id="ngNome" placeholder="Nome do grupo"><input id="ngRep" placeholder="Representante"></div>
-    <div class="row"><input id="ngAju" placeholder="Ajudante"><input id="ngBai" placeholder="Bairro"></div>
-    <div class="row"><button id="bGuardaG">Guardar grupo</button><button class="alt" id="bCancG">Cancelar</button></div>
-  </section>
-  <section class="box" id="vazio"><h2>Ainda não há grupos</h2><p class="note">Toque em “Novo grupo” para registar o primeiro. Pode completar contactos e local de pregação em Definições.</p></section>
-  <div id="gBody" class="hide">
-    <section class="box" id="ficha"></section>
-    <section class="box">
-      <h2 id="tMes"></h2>
-      <div class="wrap"><table id="tab"></table></div>
-      <div class="row"><select id="pMem" aria-label="Membro"></select><input id="pVal" type="number" inputmode="decimal" min="0" step="any" placeholder="Valor em MT"><button id="bPag">Registar entrega</button></div>
-      <div class="row"><input id="nMem" placeholder="Nome do novo membro"><input id="nTel" type="tel" placeholder="Telefone (opcional)"><button class="alt" id="bMem">Adicionar membro</button></div>
-      <div class="row"><button class="alt" id="bPdf">Exportar PDF</button><button class="alt" id="bCsv">Exportar CSV</button></div>
-    </section>
-    <section class="box">
-      <h2 id="tAno"></h2>
-      <div class="wrap"><table id="tabAno"></table></div>
-    </section>
-  </div>
-</div>
-
-<div id="t-h" class="hide"><section class="box"><h2>Últimos registos</h2><div class="wrap"><table id="tabH"></table></div></section></div>
-
-<div id="t-d" class="hide"></div>
-</main>
-<div id="msg" class="hide" role="status"></div>
-
-<script>
-(function(){
-var KEY="rmalowa_v2",MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-var COLS=["groups","members","pays"];
-var $=function(i){return document.getElementById(i)};
-function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
-function mt(n){return Number(n).toLocaleString("pt-PT",{maximumFractionDigits:2})+" MT"}
-function pl(s){return s.replace(/[\u00a0\u202f]/g," ")}
-function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-function ls(k){try{return localStorage.getItem(k)}catch(e){return null}}
-function lset(k,v){try{localStorage.setItem(k,v)}catch(e){}}
-var S={groups:[],members:[],pays:[]},SB=null,UID="",EMAIL="",ADMIN=false,SEL=ls("rm_sel")||"",TAB="g";
-var tm;function toast(t){var m=$("msg");m.textContent=t;m.classList.remove("hide");clearTimeout(tm);tm=setTimeout(function(){m.classList.add("hide")},3500)}
-function fail(e){toast(e&&e.code==="not_granted"?"Sem permissão para guardar.":"Não foi possível guardar. Tente outra vez.")}
-function done(c){return function(r){if(r&&r.error)fail(r.error);load(c)}}
-function put(c,o){var q=c==="pays"?SB.from(c).upsert({id:o.id,d:o},{onConflict:"id",ignoreDuplicates:true}):SB.from(c).upsert({id:o.id,d:o},{onConflict:"id"});q.then(done(c))}
-function rem(c,id){SB.from(c).delete().eq("id",id).then(done(c))}
-function load(c){return SB.from(c).select("id,d").then(function(r){if(r.error){fail(r.error);return}S[c]=r.data.map(function(x){return x.d});render()})}
-function me(){return ls("rm_nome")||""}
-function G(){return S.groups.filter(function(g){return g.id==SEL})[0]}
-function mem(id){return S.members.filter(function(m){return m.id==id})[0]}
-
-/* cálculos */
-function monthData(g,mes,ano){
-  var ms=S.members.filter(function(m){return m.gid==g.id}),rows=[],tot=0,com=0;
-  ms.forEach(function(m){
-    var p=S.pays.filter(function(x){return x.m==m.id&&x.mes==mes&&x.ano==ano});
-    if(m.ativo===false&&!p.length)return;
-    var t=p.reduce(function(s,x){return s+x.v},0);tot+=t;if(p.length)com++;
-    var est,k;if(g.meta>0){if(t>=g.meta){est="Completo";k=""}else{est="Faltam "+mt(g.meta-t);k="w"}}else{if(t>0){est="Pago";k=""}else{est="Sem registo";k="z"}}
-    rows.push({m:m,p:p,t:t,est:est,k:k});
-  });
-  return{rows:rows,tot:tot,com:com};
-}
-function yearData(g,ano){
-  var out=[],all=0;
-  MESES.forEach(function(nm,i){var d=monthData(g,i,ano);all+=d.tot;out.push({nm:nm,com:d.com,n:d.rows.length,tot:d.tot})});
-  return{rows:out,tot:all};
-}
-
-/* ecrãs */
-function init(){
-  $("mSel").innerHTML=MESES.map(function(m,i){return'<option value="'+i+'">'+m+'</option>'}).join("");
-  var d=new Date(),y=d.getFullYear(),o="";for(var a=y-3;a<=y+1;a++)o+='<option>'+a+'</option>';
-  $("aSel").innerHTML=o;$("mSel").value=d.getMonth();$("aSel").value=y;
-  var t=ls("rm_tema");if(t)document.documentElement.setAttribute("data-theme",t);
-}
-function showTab(t){
-  TAB=t;["g","h","d"].forEach(function(k){$("t-"+k).classList.toggle("hide",k!==t)});
-  document.querySelectorAll("button.tab").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-t")===t?"true":"false")});
-  if(t==="d")renderSet();
-}
-function render(){
-  if(!S.groups.some(function(g){return g.id==SEL}))SEL=S.groups.length?S.groups[0].id:"";
-  $("modo").textContent=EMAIL+(ADMIN?" · administrador":"");
-  $("modo").className="pill on";
-  renderG();renderH();
-  var ae=document.activeElement;
-  if(TAB==="d"&&!(ae&&$("t-d").contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)))renderSet();
-}
-function renderG(){
-  var g=G();$("vazio").classList.toggle("hide",!!g);$("gBody").classList.toggle("hide",!g);
-  var gs=$("gSel");gs.innerHTML=S.groups.map(function(x){return'<option value="'+esc(x.id)+'">'+esc(x.nome)+'</option>'}).join("");
-  if(!g)return;
-  gs.value=g.id;
-  var mes=+$("mSel").value,ano=+$("aSel").value,d=monthData(g,mes,ano);
-  $("ficha").innerHTML='<h2>'+esc(g.nome)+'</h2><div class="info"><div><b>Representante</b>'+esc(g.rep||"-")+'</div><div><b>Ajudante</b>'+esc(g.aju||"-")+'</div><div><b>Bairro</b>'+esc(g.bairro||"-")+'</div><div><b>Contribuição esperada</b>'+(g.meta>0?mt(g.meta):"Não definida")+'</div></div>';
-  $("tMes").textContent="Pagamentos de "+MESES[mes]+" "+ano;
-  var rows=d.rows.map(function(r){
-    var ch=r.p.map(function(x){return'<span class="chip">'+mt(x.v)+(ADMIN?'<button data-d="'+esc(x.id)+'" aria-label="Apagar entrega">×</button>':'')+'</span>'}).join("")||'<span style="color:var(--mu)">-</span>';
-    return'<tr><td>'+esc(r.m.nome)+'</td><td>'+ch+'</td><td>'+MESES[mes]+'</td><td>'+ano+'</td><td><span class="st '+r.k+'">'+esc(r.est)+'</span></td><td class="n">'+mt(r.t)+'</td></tr>';
-  }).join("")||'<tr><td colspan="6">Adicione o primeiro membro abaixo.</td></tr>';
-  $("tab").innerHTML='<thead><tr><th>Membro</th><th>Entregas</th><th>Mês</th><th>Ano</th><th>Estado</th><th class="n">Total</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="4">Total do grupo</td><td>'+d.com+' de '+d.rows.length+' com pagamento</td><td class="n">'+mt(d.tot)+'</td></tr></tfoot>';
-  var pm=$("pMem"),pv=pm.value;
-  pm.innerHTML=S.members.filter(function(m){return m.gid==g.id&&m.ativo!==false}).map(function(m){return'<option value="'+esc(m.id)+'">'+esc(m.nome)+'</option>'}).join("");
-  if(pv)pm.value=pv;
-  var y=yearData(g,ano);$("tAno").textContent="Total do ano "+ano;
-  $("tabAno").innerHTML='<thead><tr><th>Mês</th><th>Membros com pagamento</th><th class="n">Total</th></tr></thead><tbody>'+y.rows.map(function(r){return'<tr><td>'+r.nm+'</td><td>'+r.com+' de '+r.n+'</td><td class="n">'+mt(r.tot)+'</td></tr>'}).join("")+'</tbody><tfoot><tr><td colspan="2">Total do ano</td><td class="n">'+mt(y.tot)+'</td></tr></tfoot>';
-}
-function renderH(){
-  var l=S.pays.slice().sort(function(a,b){return(b.ts||0)-(a.ts||0)}).slice(0,50);
-  $("tabH").innerHTML='<thead><tr><th>Data e hora</th><th>Grupo</th><th>Membro</th><th class="n">Valor</th><th>Registado por</th></tr></thead><tbody>'+(l.map(function(p){
-    var g=S.groups.filter(function(x){return x.id==p.gid})[0],m=mem(p.m);
-    return'<tr><td>'+(p.ts?new Date(p.ts).toLocaleString("pt-PT"):"-")+'</td><td>'+esc(g?g.nome:"-")+'</td><td>'+esc(m?m.nome:"-")+'</td><td class="n">'+mt(p.v)+'</td><td>'+esc(p.por||"-")+'</td></tr>'}).join("")||'<tr><td colspan="5">Ainda não há registos.</td></tr>')+'</tbody>';
-}
-function renderSet(){
-  var g=G(),h='';
-  h+='<section class="box"><h2>O meu nome</h2><p class="note">Aparece no histórico como quem recebeu cada valor.</p><label class="f">Nome do representante<input id="sNome" value="'+esc(me())+'"></label><div class="row"><button id="sNomeOk">Guardar nome</button></div></section>';
-  if(g){
-    h+='<section class="box"><h2>Grupo: '+esc(g.nome)+'</h2>'
-    +'<label class="f">Nome do grupo<input id="eNome" value="'+esc(g.nome)+'"></label>'
-    +'<label class="f">Representante<input id="eRep" value="'+esc(g.rep)+'"></label>'
-    +'<label class="f">Ajudante<input id="eAju" value="'+esc(g.aju)+'"></label>'
-    +'<label class="f">Contactos (representante e ajudante)<input id="eCon" value="'+esc(g.con)+'"></label>'
-    +'<label class="f">Bairro<input id="eBai" value="'+esc(g.bairro)+'"></label>'
-    +'<label class="f">Local de pregação<input id="eLoc" value="'+esc(g.loc)+'"></label>'
-    +'<label class="f">Contribuição esperada por membro (MT, opcional)<input id="eMeta" type="number" inputmode="decimal" min="0" value="'+(g.meta||"")+'"></label>'
-    +'<p class="note">Registado em '+esc(g.data||"-")+'. Sem contribuição esperada, o sistema não calcula valor em falta.</p>'
-    +'<div class="row"><button id="bEd">Guardar grupo</button>'+(ADMIN?'<button class="bad" id="bDelG">Apagar grupo</button>':'')+'</div></section>';
-    var ms=S.members.filter(function(m){return m.gid==g.id});
-    h+='<section class="box"><h2>Membros</h2>'+(ms.map(function(m){return'<div class="mem"><span>'+esc(m.nome)+(m.tel?' · '+esc(m.tel):'')+'<br><small style="color:var(--mu)">Entrada: '+esc(m.data||"-")+'</small></span><button class="alt" data-a="'+esc(m.id)+'">'+(m.ativo===false?"Inativo: ativar":"Ativo: desativar")+'</button></div>'}).join("")||'<p class="note">Sem membros neste grupo.</p>')+'</section>';
-  }
-  h+='<section class="box"><h2>Conta</h2><p>'+esc(EMAIL)+' <span class="pill on">'+(ADMIN?"Administrador":"Representante")+'</span></p><p class="note">Os registos são partilhados em tempo real com todos os representantes. Só o administrador apaga ou corrige entregas.</p><div class="row"><button class="alt" id="bSair">Sair</button></div></section>';
-  h+='<section class="box"><h2>Aparência</h2><div class="row"><select id="sTema" aria-label="Tema"><option value="">Automático</option><option value="light">Claro</option><option value="dark">Escuro</option></select></div></section>';
-  h+='<section class="box"><h2>Cópia de segurança</h2><div class="row"><button class="alt" id="bBk">Guardar cópia (JSON)</button></div><label class="f">Restaurar: cole aqui o conteúdo da cópia<textarea id="rTxt"></textarea></label><div class="row"><button class="alt" id="bRs">Restaurar cópia</button></div><p class="note">Restaurar junta os registos da cópia aos atuais.</p></section>';
-  $("t-d").innerHTML=h;
-  $("sTema").value=ls("rm_tema")||"";
-}
-
-/* ações */
-function dl(name,data){var b=new Blob([data],{type:"application/octet-stream"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500)}
-function sel(){return{g:G(),mes:+$("mSel").value,ano:+$("aSel").value}}
-function csv(){
-  var s=sel(),d=monthData(s.g,s.mes,s.ano),L=["Grupo;Membro;Valor (MT);Mês;Ano;Estado;Total do membro (MT)"];
-  d.rows.forEach(function(r){
-    if(!r.p.length)L.push([s.g.nome,r.m.nome,0,MESES[s.mes],s.ano,r.est,0].join(";"));
-    r.p.forEach(function(x){L.push([s.g.nome,r.m.nome,x.v,MESES[s.mes],s.ano,r.est,r.t].join(";"))});
-  });
-  L.push(["Total do grupo","","",MESES[s.mes],s.ano,"",d.tot].join(";"));
-  dl("malowa-"+s.g.nome.replace(/\s+/g,"-")+"-"+(s.mes+1)+"-"+s.ano+".csv","\ufeff"+L.join("\n"));
-}
-function pdf(){
-  var s=sel(),J=window.jspdf&&window.jspdf.jsPDF;
-  if(!J){toast("PDF indisponível neste momento.");return}
-  var d=new J(),m=monthData(s.g,s.mes,s.ano),y=yearData(s.g,s.ano);
-  if(!d.autoTable){toast("PDF indisponível neste momento.");return}
-  d.setFontSize(15);d.text("R-MALOWA SENA - "+s.g.nome,14,16);d.setFontSize(10);
-  d.text("Representante: "+(s.g.rep||"-")+"   Ajudante: "+(s.g.aju||"-"),14,23);d.text("Bairro: "+(s.g.bairro||"-")+"   Local: "+(s.g.loc||"-"),14,28);
-  d.text("Pagamentos de "+MESES[s.mes]+" "+s.ano,14,36);
-  d.autoTable({startY:39,head:[["Membro","Entregas","Estado","Total"]],body:m.rows.map(function(r){return[r.m.nome,pl(r.p.map(function(x){return mt(x.v)}).join(" + ")||"-"),pl(r.est),pl(mt(r.t))]}),foot:[["Total do grupo","",m.com+" de "+m.rows.length+" com pagamento",pl(mt(m.tot))]],headStyles:{fillColor:[11,107,79]},footStyles:{fillColor:[232,243,238],textColor:20}});
-  d.text("Total do ano "+s.ano,14,d.lastAutoTable.finalY+10);
-  d.autoTable({startY:d.lastAutoTable.finalY+13,head:[["Mês","Membros com pagamento","Total"]],body:y.rows.map(function(r){return[r.nm,r.com+" de "+r.n,pl(mt(r.tot))]}),foot:[["Total do ano","",pl(mt(y.tot))]],headStyles:{fillColor:[11,107,79]},footStyles:{fillColor:[232,243,238],textColor:20}});
-  dl("malowa-"+s.g.nome.replace(/\s+/g,"-")+"-"+s.ano+".pdf",d.output("arraybuffer"));
-}
-function novoGrupo(o){return{id:uid(),nome:o.nome,rep:o.rep||"",aju:o.aju||"",con:"",bairro:o.bairro||"",loc:"",meta:0,data:new Date().toISOString().slice(0,10)}}
-
-document.addEventListener("click",function(e){
-  var t=e.target,b=t.closest&&t.closest("button");if(!b)return;
-  if(b.classList.contains("tab"))return showTab(b.getAttribute("data-t"));
-  if(b.getAttribute("data-d")){rem("pays",b.getAttribute("data-d"));return}
-  if(b.getAttribute("data-a")){var m=mem(b.getAttribute("data-a"));if(m){m.ativo=m.ativo===false;put("members",m)}return}
-  var id=b.id;
-  if(id==="bNovoG")$("novoG").classList.remove("hide");
-  else if(id==="bCancG")$("novoG").classList.add("hide");
-  else if(id==="bGuardaG"){
-    var n=$("ngNome").value.trim();if(!n){$("ngNome").focus();return}
-    var g=novoGrupo({nome:n,rep:$("ngRep").value.trim(),aju:$("ngAju").value.trim(),bairro:$("ngBai").value.trim()});
-    SEL=g.id;lset("rm_sel",SEL);put("groups",g);
-    ["ngNome","ngRep","ngAju","ngBai"].forEach(function(i){$(i).value=""});$("novoG").classList.add("hide");
-  }
-  else if(id==="bMem"){
-    var nm=$("nMem").value.trim();if(!nm){$("nMem").focus();return}
-    put("members",{id:uid(),gid:SEL,nome:nm,tel:$("nTel").value.trim(),ativo:true,data:new Date().toISOString().slice(0,10)});$("nMem").value="";$("nTel").value="";
-  }
-  else if(id==="bPag"){
-    var v=parseFloat($("pVal").value),mm=$("pMem").value;
-    if(!mm||!(v>0)){$("pVal").focus();return}
-    put("pays",{id:uid(),gid:SEL,m:mm,v:v,mes:+$("mSel").value,ano:+$("aSel").value,data:new Date().toISOString().slice(0,10),ts:Date.now(),por:me()||"Sem nome",uid:UID});$("pVal").value="";
-  }
-  else if(id==="bPdf")pdf();
-  else if(id==="bCsv")csv();
-  else if(id==="sNomeOk"){lset("rm_nome",$("sNome").value.trim());toast("Nome guardado.")}
-  else if(id==="bEd"){
-    var g2=G();if(!g2)return;var n2=$("eNome").value.trim();if(!n2){$("eNome").focus();return}
-    g2.nome=n2;g2.rep=$("eRep").value.trim();g2.aju=$("eAju").value.trim();g2.con=$("eCon").value.trim();g2.bairro=$("eBai").value.trim();g2.loc=$("eLoc").value.trim();g2.meta=Math.max(0,+$("eMeta").value||0);
-    put("groups",g2);toast("Grupo guardado.");
-  }
-  else if(id==="bDelG"){
-    if(b.getAttribute("data-c")!=="1"){b.setAttribute("data-c","1");b.textContent="Toque outra vez para apagar tudo deste grupo";return}
-    var gid=SEL;S.members.filter(function(m){return m.gid==gid}).forEach(function(m){rem("members",m.id)});S.pays.filter(function(p){return p.gid==gid}).forEach(function(p){rem("pays",p.id)});rem("groups",gid);
-  }
-  else if(id==="bSair"){SB.auth.signOut().then(function(){location.reload()})}
-  else if(id==="bBk")dl("malowa-copia-"+new Date().toISOString().slice(0,10)+".json",JSON.stringify(S));
-  else if(id==="bRs"){
-    try{var r=JSON.parse($("rTxt").value);COLS.forEach(function(c){(r[c]||[]).forEach(function(x){if(x&&x.id)put(c,x)})});toast("Cópia restaurada.")}catch(er){toast("O texto não é uma cópia válida.")}
-  }
-});
-document.addEventListener("change",function(e){
-  var i=e.target.id;
-  if(i==="gSel"){SEL=e.target.value;lset("rm_sel",SEL);render()}
-  else if(i==="mSel"||i==="aSel")renderG();
-  else if(i==="sTema"){var v=e.target.value;lset("rm_tema",v);if(v)document.documentElement.setAttribute("data-theme",v);else document.documentElement.removeAttribute("data-theme")}
-});
-
-init();showTab("g");render();
-
-/* login e ligação */
-var C=window.RM_CFG||{};
-function lerr(t){$("lerr").textContent=t}
-function entrar(sess){
-  $("login").classList.add("hide");$("app").classList.remove("hide");
-  UID=sess.user.id;EMAIL=sess.user.email||"";
-  SB.from("profiles").select("role").eq("id",UID).maybeSingle().then(function(r){
-    ADMIN=!!(r.data&&r.data.role==="admin");
-    return Promise.all(COLS.map(function(c){return load(c)}));
-  }).then(render);
-  COLS.forEach(function(c){SB.channel("rm-"+c).on("postgres_changes",{event:"*",schema:"public",table:c},function(){load(c)}).subscribe()});
-}
-if(!window.supabase||!C.url||C.url.indexOf("COLE")===0){
-  $("login").classList.remove("hide");lerr("Falta preencher o endereço e a chave do Supabase no ficheiro config.js.");$("bEntrar").disabled=true;
-}else{
-  SB=supabase.createClient(C.url,C.key);
-  SB.auth.getSession().then(function(r){if(r.data&&r.data.session)entrar(r.data.session);else $("login").classList.remove("hide")});
-  $("bEntrar").onclick=function(){lerr("");SB.auth.signInWithPassword({email:$("lEmail").value.trim(),password:$("lPass").value}).then(function(r){if(r.error)lerr("Email ou palavra-passe incorretos.");else entrar(r.data.session)})};
-  $("lPass").onkeydown=function(e){if(e.key==="Enter")$("bEntrar").click()};
-}
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
-})();
-</script>
-<!-- ABA RELATÓRIO DE CAMPO -->
-<button class="tab"
-        type="button"
-        role="tab"
-        data-t="f"
-        aria-selected="false">
-  RELATÓRIO DE CAMPO
-</button>
-
-<!-- PAINEL -->
-<div id="t-f" class="tab-content">
-
-  <h2>RELATÓRIO DE CAMPO — R-MALOWA SENA 2.0</h2>
-
-  <!-- ACESSO PRIVADO -->
-  <section id="private-access-section">
-    <h3>🔒 Pasta Privada</h3>
-    <p>Introduza a senha geral da Pasta Privada.</p>
-
-    <input
-      type="password"
-      id="private-password"
-      placeholder="Senha de acesso"
-      autocomplete="current-password"
-    >
-
-    <button type="button" onclick="verificarAcessoPrivado()">
-      🔑 Abrir Pasta
-    </button>
-
-    <p id="access-message" role="alert" hidden></p>
-  </section>
-
-  <!-- CONTEÚDO PROTEGIDO -->
-  <section id="relatorio-conteudo" hidden>
-
-    <!-- PERÍODO -->
-    <div>
-      <h3>📅 Período do Relatório</h3>
-
-      <label for="rel-mes">Mês:</label>
-      <select id="rel-mes">
-        <option value="1">Janeiro</option>
-        <option value="2">Fevereiro</option>
-        <option value="3">Março</option>
-        <option value="4">Abril</option>
-        <option value="5">Maio</option>
-        <option value="6">Junho</option>
-        <option value="7">Julho</option>
-        <option value="8">Agosto</option>
-        <option value="9">Setembro</option>
-        <option value="10">Outubro</option>
-        <option value="11">Novembro</option>
-        <option value="12">Dezembro</option>
-      </select>
-
-      <label for="rel-ano">Ano:</label>
-      <select id="rel-ano"></select>
-
-      <button type="button" onclick="carregarRelatorio()">
-        📋 Carregar
-      </button>
-
-      <button type="button" onclick="exportarRelatorio()">
-        📥 Exportar
-      </button>
-    </div>
-
-    <!-- GRUPO -->
-    <div>
-      <label for="sel-grupo">🏕️ Grupo de Campo:</label>
-      <select id="sel-grupo">
-        <option value="">Selecione um grupo</option>
-      </select>
-    </div>
-
-    <!-- TABELA REUTILIZADA PARA AS 3 CATEGORIAS -->
-    <h3>🟦 Pioneiros Regulares</h3>
-    <div class="table-responsive">
-      <table>
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Estudos Dirigidos</th>
-            <th>Horas de Campo</th>
+            <th>Field Hours</th>
           </tr>
         </thead>
         <tbody id="tbl-regulares">
-          <tr><td colspan="3">Sem registos</td></tr>
+          <tr><td colspan="3">No records</td></tr>
         </tbody>
         <tfoot>
           <tr>
             <th>Subtotal</th>
             <th id="sub-reg-estudos">0</th>
-            <th id="sub-reg-horas">0</th>
+            <th id="sub-reg-hours">0</th>
           </tr>
         </tfoot>
       </table>
     </div>
 
-    <h3>🟩 Pioneiros Auxiliares</h3>
+    <h3>🟩 Auxiliary Pioneers</h3>
     <div class="table-responsive">
       <table>
         <thead>
           <tr>
-            <th>Nome</th>
-            <th>Estudos Dirigidos</th>
-            <th>Horas de Campo</th>
+            <th>Name</th>
+            <th>Directed Studies</th>
+            <th>Field Hours</th>
           </tr>
         </thead>
         <tbody id="tbl-auxiliares">
-          <tr><td colspan="3">Sem registos</td></tr>
+          <tr><td colspan="3">No records</td></tr>
         </tbody>
         <tfoot>
           <tr>
             <th>Subtotal</th>
             <th id="sub-aux-estudos">0</th>
-            <th id="sub-aux-horas">0</th>
+            <th id="sub-aux-hours">0</th>
           </tr>
         </tfoot>
       </table>
     </div>
 
-    <h3>🟨 Publicadores</h3>
+    <h3>🟨 Publishers</h3>
     <div class="table-responsive">
       <table>
         <thead>
           <tr>
-            <th>Nome</th>
-            <th>Estudos Dirigidos</th>
-            <th>Horas de Campo</th>
+            <th>Name</th>
+            <th>Directed Studies</th>
+            <th>Field Hours</th>
           </tr>
         </thead>
         <tbody id="tbl-publicadores">
-          <tr><td colspan="3">Sem registos</td></tr>
+          <tr><td colspan="3">No records</td></tr>
         </tbody>
         <tfoot>
           <tr>
             <th>Subtotal</th>
             <th id="sub-pub-estudos">0</th>
-            <th id="sub-pub-horas">0</th>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
 
-    <!-- RESUMO -->
-    <section>
-      <h3>📊 Resumo Geral do Mês</h3>
-      <p>Total de estudos: <strong id="total-estudos">0</strong></p>
-      <p>Total de horas: <strong id="total-horas">0</strong></p>
-    </section>
+<th id="sub-pub-horas">0</th>
 
-    <!-- REGISTAR ATIVIDADE -->
-    <section>
-      <h3>➕ Registar Nova Atividade</h3>
+</tr>
 
-      <label for="act-membro">Pessoa:</label>
-      <select id="act-membro">
-        <option value="">Selecione uma pessoa</option>
-      </select>
+</tfoot>
 
-      <label for="act-data">Data:</label>
-      <input type="date" id="act-data">
+</table>
 
-      <label for="act-saida">Hora de saída:</label>
-      <input type="time" id="act-saida">
+</div>
 
-      <label for="act-regresso">Hora de regresso:</label>
-      <input type="time" id="act-regresso">
+<!-- SUMMARY -->
 
-      <label for="act-estudos">Estudos dirigidos:</label>
-      <input type="number"
-             id="act-estudos"
-             min="0"
-             step="1"
-             value="0">
+<section>
 
-      <label for="act-horas">Horas calculadas:</label>
-      <input type="text" id="act-horas" readonly>
+<h3>📊 General Summary of the Month</h3>
+<p>Total studies: <strong id="total-estudos">0</strong></p>
 
-      <button type="button" onclick="guardarAtividade()">
-        💾 Guardar Registo
-      </button>
+<p>Total hours: <strong id="total-horas">0</strong></p>
 
-      <p id="activity-message" role="status"></p>
+</section>
+
+<!-- REGISTER ACTIVITY -->
+
+<section>
+
+<h3>➕ Register New Activity</h3>
+
+<label for="act-membro">Person:</label>
+
+<select id="act-membro">
+
+<option value="">Select a person</option>
+
+</select>
+
+<label for="act-data">Date:</label>
+
+<input type="date" id="act-data">
+
+<label for="act-saida">Departure Time:</label>
+
+<input type="time" id="act-saida">
+
+<label for="act-regresso">Return Time:</label>
+
+<input type="time" id="act-regresso">
+
+<label for="act-estudos">Directed Studies:</label>
+
+<input type="number"
+id="act-estudos"
+min="0"
+step="1"
+value="0">
+
+<label for="act-horas">Calculated Hours:</label>
+
+<input type="text" id="act-horas" readonly>
+
+<button type="button" onclick="guardarAtividade()">
+
+💾 Save Record
+
+</button>
+
+<p id="activity-message" role="status"></p>
     </section>
 
   </section>
 </div>
 
-<!-- JAVASCRIPT -->
+
+<<!-- JAVASCRIPT -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 <script src="field-report.js"></script>
+>
 
 </body>
 </html>
+
+ 
