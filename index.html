@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+um<!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
@@ -642,18 +642,272 @@ function atualizarPainel() {
 }
 
 // ========== PASTA PRIVADA ==========
-function abrirPastaPrivada() {
+
+// =============================================
+// R-MALOWA SENA 2.0
+// SEGURANÇA E GESTÃO DA PASTA PRIVADA
+// =============================================
+
+// ABRIR PASTA PRIVADA
+async function abrirPastaPrivada() {
     const senha = document.getElementById('private-password').value;
-    if (senha === dados.senhaPrivada) {
-        document.getElementById('private-locked').style.display = 'none';
-        document.getElementById('private-content').style.display = 'block';
-        document.getElementById('private-error').style.display = 'none';
-    } else {
-        document.getElementById('private-error').style.display = 'block';
+    const erro = document.getElementById('private-error');
+
+    erro.style.display = 'none';
+
+    if (!senha) {
+        erro.textContent = 'Introduza a senha.';
+        erro.style.display = 'block';
+        return;
+    }
+
+    try {
+        const { data, error } = await SB.functions.invoke(
+            'private-folder-access',
+            {
+                body: {
+                    action: 'unlock',
+                    password: senha
+                }
+            }
+        );
+
+        if (error) throw error;
+
+        if (data && data.authorized === true) {
+            document.getElementById('private-locked').style.display = 'none';
+            document.getElementById('private-content').style.display = 'block';
+            document.getElementById('private-password').value = '';
+        } else {
+            erro.textContent = 'Senha incorreta ou acesso não autorizado.';
+            erro.style.display = 'block';
+        }
+
+    } catch (error) {
+        console.error('Erro na Pasta Privada:', error);
+        erro.textContent = 'Não foi possível verificar o acesso.';
+        erro.style.display = 'block';
     }
 }
 
+// FECHAR PASTA PRIVADA
 function fecharPastaPrivada() {
+    document.getElementById('private-locked').style.display = 'block';
+    document.getElementById('private-content').style.display = 'none';
+    document.getElementById('private-password').value = '';
+}
+
+// =============================================
+// CARREGAR UTILIZADORES
+// =============================================
+
+async function carregarUtilizadores() {
+    const lista = document.getElementById('users-list');
+
+    lista.innerHTML = '<tr><td colspan="5">A carregar...</td></tr>';
+
+    const { data, error } = await SB
+        .from('private_access')
+        .select('id,email,name,is_authorized,authorized_at')
+        .order('name');
+
+    if (error) {
+        console.error(error);
+        lista.innerHTML = '<tr><td colspan="5">Erro ao carregar utilizadores. Verifica as permissões.</td></tr>';
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        lista.innerHTML = '<tr><td colspan="5">Nenhum utilizador registado.</td></tr>';
+        return;
+    }
+
+    lista.innerHTML = data.map(u => `
+        <tr>
+            <td>${escaparHTML(u.name || '—')}</td>
+            <td>${escaparHTML(u.email)}</td>
+            <td>
+                ${u.is_authorized
+                    ? '<span class="tag tag-green">Autorizado</span>'
+                    : '<span class="tag tag-yellow">Pendente</span>'}
+            </td>
+            <td>${u.authorized_at
+                ? new Date(u.authorized_at).toLocaleDateString('pt-PT')
+                : '—'}</td>
+            <td>
+                <button class="btn ${u.is_authorized ? 'btn-danger' : 'btn-success'}"
+                    onclick="alterarAutorizacao('${u.id}', ${!u.is_authorized})">
+                    ${u.is_authorized ? 'Bloquear' : 'Autorizar'}
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// =============================================
+// ALTERAR AUTORIZAÇÃO
+// =============================================
+
+async function alterarAutorizacao(id, autorizado) {
+    if (!confirm(autorizado
+        ? 'Autorizar este utilizador?'
+        : 'Bloquear este utilizador?')) return;
+
+    const { data: utilizador } = await SB.auth.getUser();
+
+    if (!utilizador.user) {
+        alert('É necessário iniciar sessão.');
+        return;
+    }
+
+    const { error } = await SB
+        .from('private_access')
+        .update({
+            is_authorized: autorizado,
+            authorized_at: autorizado ? new Date().toISOString() : null,
+            authorized_by: utilizador.user.id
+        })
+        .eq('id', id);
+
+    if (error) {
+        console.error(error);
+        alert('Não foi possível alterar a autorização. Verifica as permissões de administrador.');
+        return;
+    }
+
+    alert('Autorização atualizada!');
+    carregarUtilizadores();
+}
+
+// =============================================
+// HISTÓRICO DE ACESSOS
+// =============================================
+
+async function carregarHistoricoAcessos() {
+    const lista = document.getElementById('access-history');
+
+    const { data, error } = await SB
+        .from('access_logs')
+        .select('email,accessed_at,success')
+        .order('accessed_at', { ascending: false })
+        .limit(100);
+
+    if (error) {
+        console.error(error);
+        lista.innerHTML = '<tr><td colspan="3">Erro ao carregar histórico.</td></tr>';
+        return;
+    }
+
+    lista.innerHTML = data.length
+        ? data.map(a => `
+            <tr>
+                <td>${escaparHTML(a.email)}</td>
+                <td>${new Date(a.accessed_at).toLocaleString('pt-PT')}</td>
+                <td>
+                    ${a.success
+                        ? '<span class="tag tag-green">Sucesso</span>'
+                        : '<span class="tag tag-red">Recusado</span>'}
+                </td>
+            </tr>
+        `).join('')
+        : '<tr><td colspan="3">Sem acessos registados.</td></tr>';
+}
+
+// =============================================
+// PESQUISAR UTILIZADORES
+// =============================================
+
+document.getElementById('user-search')
+    .addEventListener('input', function() {
+        const pesquisa = this.value.toLowerCase();
+
+        document.querySelectorAll('#users-list tr').forEach(linha => {
+            linha.style.display =
+                linha.textContent.toLowerCase().includes(pesquisa)
+                ? ''
+                : 'none';
+        });
+    });
+
+// =============================================
+// ALTERAR SENHA GERAL
+// =============================================
+
+async function alterarSenhaPrivada() {
+    const novaSenha = document.getElementById('new-private-password').value;
+
+    if (novaSenha.length < 8) {
+        alert('A senha deve ter pelo menos 8 caracteres.');
+        return;
+    }
+
+    if (!confirm('Confirmas a alteração da senha geral?')) return;
+
+    try {
+        const { data, error } = await SB.functions.invoke(
+            'private-folder-access',
+            {
+                body: {
+                    action: 'change_password',
+                    newPassword: novaSenha
+                }
+            }
+        );
+
+        if (error) throw error;
+
+        if (!data || !data.success) {
+            throw new Error('Alteração não autorizada.');
+        }
+
+        document.getElementById('new-private-password').value = '';
+        alert('Senha alterada com sucesso!');
+
+    } catch (error) {
+        console.error(error);
+        alert('Não foi possível alterar a senha.');
+    }
+}
+
+// =============================================
+// ALTERAR COR DO SISTEMA
+// =============================================
+
+function alterarCorSistema() {
+    const cor = document.getElementById('app-color').value;
+
+    document.documentElement.style.setProperty(
+        '--cor-principal',
+        cor
+    );
+
+    document.querySelectorAll(
+        '.tab-btn.active, .btn-primary, header, th'
+    ).forEach(elemento => {
+        elemento.style.backgroundColor = cor;
+    });
+
+    localStorage.setItem('malowa_cor', cor);
+}
+
+// PROTEÇÃO CONTRA HTML INDESEJADO
+function escaparHTML(valor) {
+    return String(valor).replace(/[&<>"']/g, caractere => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[caractere]);
+}
+
+// INICIALIZAR
+carregarDados();
+</script>
+
+</body>
+</html>
+ {
     document.getElementById('private-locked').style.display = 'block';
     document.getElementById('private-content').style.display = 'none';
     document.getElementById('private-password').value = '';
