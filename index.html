@@ -308,7 +308,130 @@
                     <option value="8">Agosto</option>
                     <option value="9">Setembro</option>
                     <option 
-                        </div>
+                        
+<!-- =========================================
+     PASTA PRIVADA
+========================================= -->
+<div id="private" class="tab-content">
+    <div class="card">
+        <h2>🔒 Pasta Privada</h2>
+        <p>Acesso exclusivo para utilizadores autorizados.</p>
+
+        <div id="private-locked" class="locked">
+            <h3>🔐 Acesso protegido</h3>
+            <input type="password"
+                   id="private-password"
+                   placeholder="Introduza a senha geral">
+            <button class="btn btn-primary"
+                    onclick="abrirPastaPrivada()">
+                Entrar
+            </button>
+            <p id="private-error" style="display:none;color:red;">
+                Senha incorreta ou acesso não autorizado.
+            </p>
+        </div>
+
+        <div id="private-content" style="display:none;">
+            <h3>Conteúdo da Pasta Privada</h3>
+            <p>Área reservada aos utilizadores autorizados.</p>
+            <button class="btn btn-danger"
+                    onclick="fecharPastaPrivada()">
+                Fechar Pasta Privada
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================
+     GESTÃO DE UTILIZADORES
+========================================= -->
+<div id="users" class="tab-content">
+    <div class="card">
+        <h2>👤 Gestão de Utilizadores</h2>
+
+        <input type="search"
+               id="user-search"
+               placeholder="Pesquisar utilizador...">
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Autorização</th>
+                    <th>Data</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="users-list">
+                <tr>
+                    <td colspan="5">A carregar utilizadores...</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Histórico de acessos</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>E-mail</th>
+                    <th>Data de acesso</th>
+                    <th>Resultado</th>
+                </tr>
+            </thead>
+            <tbody id="access-history">
+                <tr>
+                    <td colspan="3">A carregar histórico...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- =========================================
+     DEFINIÇÕES
+========================================= -->
+<div id="settings" class="tab-content">
+    <div class="card">
+        <h2>⚙️ Definições do Sistema</h2>
+
+        <h3>Informações gerais</h3>
+        <table>
+            <tr>
+                <th>Aplicativo</th>
+                <td>R-MALOWA SENA 2.0</td>
+            </tr>
+            <tr>
+                <th>Base de dados</th>
+                <td>Supabase</td>
+            </tr>
+            <tr>
+                <th>Versão</th>
+                <td>2.0</td>
+            </tr>
+        </table>
+
+        <h3>Segurança</h3>
+        <p>Senha geral da Pasta Privada</p>
+        <input type="password"
+               id="new-private-password"
+               placeholder="Nova senha">
+        <button class="btn btn-primary"
+                onclick="alterarSenhaPrivada()">
+            Alterar senha
+        </button>
+
+        <h3>Aparência</h3>
+        <label for="app-color">Cor principal:</label>
+        <input type="color" id="app-color" value="#2c5f2d">
+
+        <button class="btn btn-primary"
+                onclick="alterarCorSistema()">
+            Aplicar cor
+        </button>
+    </div>
+</div>
+</div>
 
 <!-- JAVASCRIPT -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
