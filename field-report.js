@@ -1,24 +1,83 @@
 // =====================================================
-// R-MALOWA SENA 2.0 — MÓDULO: RELATÓRIO DE CAMPO
+// R-MALOWA SENA 2.0
+// MÓDULO DE RELATÓRIOS DE CAMPO
 // =====================================================
 
 let acessoPermitido = false;
+let membrosAtuais = [];
+let atividadesAtuais = [];
+let estudosAtuais = [];
 
-document.addEventListener('DOMContentLoaded', function() {
-  console.log("Módulo Relatório de Campo carregado ✅");
-});
+const T_GRUPOS = 'field_groups';
+const T_RELATORIOS = 'field_reports';
+const T_ATIVIDADES = 'field_activities';
+const T_ESTUDOS = 'studies';
 
-// =======================================
-// 🔒 VERIFICAÇÃO DE ACESSO PRIVADO
-// ======================================
+// =====================================================
+// FUNÇÕES AUXILIARES
+// =====================================================
+
+function el(id) {
+  return document.getElementById(id);
+}
+
+function valor(id, padrao = '') {
+  return el(id)?.value ?? padrao;
+}
+
+function calcularDuracao(saida, regresso) {
+  if (!saida || !regresso) return 0;
+
+  const [h1, m1] = saida.split(':').map(Number);
+  const [h2, m2] = regresso.split(':').map(Number);
+
+  let minutos = (h2 * 60 + m2) - (h1 * 60 + m1);
+
+  if (minutos < 0) minutos += 1440;
+
+  return Number((minutos / 60).toFixed(2));
+}
+
+function obterPeriodo() {
+  const mes = Number(valor('rel-mes', new Date().getMonth() + 1));
+  const ano = Number(valor('rel-ano', new Date().getFullYear()));
+
+  return {
+    mes,
+    ano,
+    data: `${ano}-${String(mes).padStart(2, '0')}-01`
+  };
+}
+
+function categoriaValida(categoria) {
+  const c = String(categoria || '').toLowerCase();
+
+  if (['regular', 'regular', 'pioneiro regular'].includes(c))
+    return 'regular';
+
+  if (['auxiliary', 'auxiliar', 'pioneiro auxiliar'].includes(c))
+    return 'auxiliary';
+
+  if (['publisher', 'publicador'].includes(c))
+    return 'publisher';
+
+  return '';
+}
+
+// =====================================================
+// ACESSO À PASTA PRIVADA
+// =====================================================
+
 async function verificarAcessoPrivado() {
-  const senha = document.getElementById('private-password').value;
-  const mensagem = document.getElementById('access-message');
-  const conteudo = document.getElementById('relatorio-conteudo');
+  const senha = valor('private-password');
+  const aviso = el('access-message');
+  const conteudo = el('relatorio-conteudo');
 
   if (!senha) {
-    mensagem.textContent = "⚠️ Introduza a senha!";
-    mensagem.style.display = "block";
+    if (aviso) {
+      aviso.textContent = 'Introduza a senha!';
+      aviso.style.display = 'block';
+    }
     return;
   }
 
@@ -30,368 +89,614 @@ async function verificarAcessoPrivado() {
 
     if (error) throw error;
 
-    if (senha === data.password_hash) {
-      const { data: sessao } = await SB.auth.getSession();
-      
-      await SB.from('access_logs').insert({
-        email: sessao?.session?.user?.email || 'desconhecido',
-        success: true
-      });
+    if (senha !== data.password_hash) {
+      await registarAcesso(false);
 
-      acessoPermitido = true;
-      mensagem.style.display = "none";
-      conteudo.style.display = "block";
-      carregarGrupos();
-      
-    } else {
-      const { data: sessao } = await SB.auth.getSession();
-      await SB.from('access_logs').insert({
-        email: sessao?.session?.user?.email || 'desconhecido',
-        success: false
-      });
-      mensagem.textContent = "❌ Senha incorreta!";
-      mensagem.style.display = "block";
+      if (aviso) {
+        aviso.textContent = 'Senha incorreta!';
+        aviso.style.display = 'block';
+      }
+      return;
     }
-    
+
+    await registarAcesso(true);
+
+    acessoPermitido = true;
+
+    if (aviso) aviso.style.display = 'none';
+    if (conteudo) conteudo.style.display = 'block';
+
+    await carregarGrupos();
+
   } catch (erro) {
-    if (erro.code === 'PGRST116') {
-      mensagem.textContent = "ℹ️ Pede ao admin para configurar a senha.";
-    } else {
-      mensagem.textContent = "⚠️ Erro: " + erro.message;
+    console.error(erro);
+
+    if (aviso) {
+      aviso.textContent = 'Erro: ' + erro.message;
+      aviso.style.display = 'block';
     }
-    mensagem.style.display = "block";
   }
 }
 
-// ======================================
-// 📅 CARREGAR GRUPOS
-// ======================================
+async function registarAcesso(sucesso) {
+  try {
+    const { data } = await SB.auth.getSession();
+
+    await SB.from('access_logs').insert({
+      email: data?.session?.user?.email || 'desconhecido',
+      success: sucesso
+    });
+  } catch (erro) {
+    console.error('Erro no registo de acesso:', erro);
+  }
+}
+
+// =====================================================
+// GESTÃO DOS GRUPOS
+// =====================================================
+
 async function carregarGrupos() {
-  const selGrupo = document.getElementById('sel-grupo');
-  if (!selGrupo) return;
-  
-  selGrupo.innerHTML = '<option value="">-- Selecione um grupo --</option>';
-  
+  const select = el('sel-grupo');
+  if (!select) return;
+
   try {
     const { data, error } = await SB
-      .from('field_groups')
-      .select('*')
+      .from(T_GRUPOS)
+      .select('id, name, is_active')
+      .eq('is_active', true)
       .order('name');
-    
+
     if (error) throw error;
-    
-    data.forEach(grupo => {
-      selGrupo.innerHTML += `<option value="${grupo.id}">${grupo.name}</option>`;
+
+    select.innerHTML =
+      '<option value="">-- Selecione um grupo --</option>';
+
+    (data || []).forEach(grupo => {
+      const opcao = document.createElement('option');
+      opcao.value = grupo.id;
+      opcao.textContent = grupo.name;
+      select.appendChild(opcao);
     });
-    
+
   } catch (erro) {
-    console.log("Erro ao carregar grupos:", erro);
+    console.error(erro);
+    alert('Erro ao carregar grupos: ' + erro.message);
   }
 }
 
-// ======================================
-// 📋 CARREGAR RELATÓRIO
-// ======================================
+async function adicionarGrupo() {
+  if (!acessoPermitido) return alert('Acesso não autorizado.');
+
+  const nome = prompt('Nome do novo grupo:');
+  if (!nome?.trim()) return;
+
+  try {
+    const { error } = await SB
+      .from(T_GRUPOS)
+      .insert({
+        name: nome.trim(),
+        is_active: true
+      });
+
+    if (error) throw error;
+
+    alert('Grupo adicionado!');
+    await carregarGrupos();
+
+  } catch (erro) {
+    alert('Erro: ' + erro.message);
+  }
+}
+
+async function editarGrupo() {
+  if (!acessoPermitido) return alert('Acesso não autorizado.');
+
+  const id = valor('sel-grupo');
+  if (!id) return alert('Selecione um grupo.');
+
+  const nome = prompt('Novo nome do grupo:');
+  if (!nome?.trim()) return;
+
+  try {
+    const { error } = await SB
+      .from(T_GRUPOS)
+      .update({ name: nome.trim() })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    alert('Nome atualizado!');
+    await carregarGrupos();
+
+  } catch (erro) {
+    alert('Erro: ' + erro.message);
+  }
+}
+
+async function desativarGrupo() {
+  if (!acessoPermitido) return alert('Acesso não autorizado.');
+
+  const id = valor('sel-grupo');
+  if (!id) return alert('Selecione um grupo.');
+
+  if (!confirm('Deseja desativar este grupo?')) return;
+
+  try {
+    const { error } = await SB
+      .from(T_GRUPOS)
+      .update({ is_active: false })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    alert('Grupo desativado. Os dados serão preservados.');
+    limparTabelas();
+    await carregarGrupos();
+
+  } catch (erro) {
+    alert('Erro: ' + erro.message);
+  }
+}
+
+// =====================================================
+// CONSULTAR MEMBROS
+// =====================================================
+
+async function consultarMembros(grupoId) {
+  let resultado = await SB
+    .from('members')
+    .select('*')
+    .eq('group_id', grupoId)
+    .order('name');
+
+  if (resultado.error) {
+    resultado = await SB
+      .from('member')
+      .select('*')
+      .eq('group_id', grupoId)
+      .order('name');
+  }
+
+  if (resultado.error) throw resultado.error;
+
+  return resultado.data || [];
+}
+
+// =====================================================
+// CARREGAR RELATÓRIOS
+// =====================================================
+
 async function carregarRelatorio() {
-  const mes = parseInt(document.getElementById('rel-mes')?.value) || new Date().getMonth() + 1;
-  const ano = parseInt(document.getElementById('rel-ano')?.value) || new Date().getFullYear();
-  const grupoId = document.getElementById('sel-grupo')?.value;
-  
+  if (!acessoPermitido) return;
+
+  const grupoId = valor('sel-grupo');
+
   if (!grupoId) {
     limparTabelas();
     return;
   }
-  
+
   try {
-    let { data: relatorio, error: erroRel } = await SB
-      .from('field_reports')
-      .select('id')
+    const periodo = obterPeriodo();
+
+    const { data: relatorios, error } = await SB
+      .from(T_RELATORIOS)
+      .select('id, category')
       .eq('group_id', grupoId)
-      .eq('report_month', mes)
-      .eq('report_year', ano)
-      .maybeSingle();
-    
-    if (erroRel) throw erroRel;
-    
-    let relatorioId;
-    if (!relatorio) {
-      const { data: novo, error: erroCriar } = await SB
-        .from('field_reports')
-        .insert({
-          group_id: grupoId,
-          report_month: mes,
-          report_year: ano
-        })
-        .select()
-        .single();
-      
-      if (erroCriar) throw erroCriar;
-      relatorioId = novo.id;
-    } else {
-      relatorioId = relatorio.id;
+      .eq('report_month', periodo.data);
+
+    if (error) throw error;
+
+    const ids = (relatorios || []).map(r => r.id);
+
+    membrosAtuais = await consultarMembros(grupoId);
+
+    let atividades = [];
+    let estudos = [];
+
+    if (ids.length > 0) {
+      const { data: a, error: ea } = await SB
+        .from(T_ATIVIDADES)
+        .select('*')
+        .in('report_id', ids);
+
+      if (ea) throw ea;
+
+      const { data: e, error: ee } = await SB
+        .from(T_ESTUDOS)
+        .select('*')
+        .in('report_id', ids);
+
+      if (ee) throw ee;
+
+      atividades = a || [];
+      estudos = e || [];
     }
-    
-    const { data: membros, error: erroMembros } = await SB
-      .from('members')
-      .select('*')
-      .eq('group_id', grupoId)
-      .order('name');
-    
-    if (erroMembros) throw erroMembros;
-    
-    const { data: atividades, error: erroAtividades } = await SB
-      .from('field_activities')
-      .select('*, member_id')
-      .eq('report_id', relatorioId);
-    
-    if (erroAtividades) throw erroAtividades;
-    
-    const { data: estudos, error: erroEstudos } = await SB
-      .from('studies')
-      .select('*')
-      .eq('report_id', relatorioId);
-    
-    if (erroEstudos) throw erroEstudos;
-    
-    organizarEDesempenhar(membros, atividades, estudos);
-    preencherListaMembros(membros);
-    
+
+    atividadesAtuais = atividades;
+    estudosAtuais = estudos;
+
+    organizarEDesempenhar(
+      membrosAtuais,
+      atividadesAtuais,
+      estudosAtuais
+    );
+
+    preencherListaMembros(membrosAtuais);
+
   } catch (erro) {
-    console.log("Erro ao carregar relatório:", erro);
-    alert("Erro ao carregar dados: " + erro.message);
+    console.error(erro);
+    alert('Erro ao carregar relatório: ' + erro.message);
   }
 }
 
-// ======================================
-// 📊 EXIBIR DADOS NAS TABELAS
-// ======================================
+// =====================================================
+// ORGANIZAR CATEGORIAS
+// =====================================================
+
 function organizarEDesempenhar(membros, atividades, estudos) {
-  const regulares = membros.filter(m => m.category === 'regular');
-  const auxiliares = membros.filter(m => m.category === 'auxiliary');
-  const publicadores = membros.filter(m => m.category === 'publisher');
-  
-  exibirTabela('tbl-regulares', regulares, atividades, estudos, 'sub-reg');
-  exibirTabela('tbl-auxiliares', auxiliares, atividades, estudos, 'sub-aux');
-  exibirTabela('tbl-publicadores', publicadores, atividades, estudos, 'sub-pub');
-  
-  const totalEstudos = 
-    somarEstudos(regulares, estudos) +
-    somarEstudos(auxiliares, estudos) +
-    somarEstudos(publicadores, estudos);
-  
-  const totalHoras = 
-    somarHoras(regulares, atividades) +
-    somarHoras(auxiliares, atividades) +
-    somarHoras(publicadores, atividades);
-  
-  const elTotalEstudos = document.getElementById('total-estudos');
-  const elTotalHoras = document.getElementById('total-horas');
-  if (elTotalEstudos) elTotalEstudos.textContent = totalEstudos;
-  if (elTotalHoras) elTotalHoras.textContent = totalHoras.toFixed(2);
+  const categorias = [
+    {
+      categoria: 'regular',
+      tabela: 'tbl-regulares',
+      prefixo: 'sub-reg'
+    },
+    {
+      categoria: 'auxiliary',
+      tabela: 'tbl-auxiliares',
+      prefixo: 'sub-aux'
+    },
+    {
+      categoria: 'publisher',
+      tabela: 'tbl-publicadores',
+      prefixo: 'sub-pub'
+    }
+  ];
+
+  categorias.forEach(item => {
+    const lista = membros.filter(
+      m => categoriaValida(m.category) === item.categoria
+    );
+
+    exibirTabela(
+      item.tabela,
+      lista,
+      atividades,
+      estudos,
+      item.prefixo
+    );
+  });
+
+  const totalHoras = atividades.reduce(
+    (s, a) => s + Number(a.hours || 0), 0
+  );
+
+  const totalEstudos = estudos.reduce(
+    (s, e) => s + Number(e.study_count || 0), 0
+  );
+
+  const totalSaidas = new Set(
+    atividades.map(a => a.member_id)
+  ).size;
+
+  if (el('total-horas'))
+    el('total-horas').textContent = totalHoras.toFixed(2);
+
+  if (el('total-estudos'))
+    el('total-estudos').textContent = totalEstudos;
+
+  if (el('total-saidas'))
+    el('total-saidas').textContent = totalSaidas;
 }
 
-function exibirTabela(tabelaId, listaMembros, atividades, estudos, prefixoRodape) {
-  const corpo = document.getElementById(tabelaId);
+// =====================================================
+// TABELAS DE PARTICIPAÇÃO
+// =====================================================
+
+function exibirTabela(tabelaId, lista, atividades, estudos, prefixo) {
+  const corpo = el(tabelaId);
   if (!corpo) return;
-  
-  if (listaMembros.length === 0) {
-    corpo.innerHTML = '<tr><td colspan="4">Sem membros nesta categoria</td></tr>';
-    return;
-  }
-  
+
   corpo.innerHTML = '';
-  let totalEstudos = 0;
+
   let totalHoras = 0;
-  
-  listaMembros.forEach(membro => {
-    const est = estudos?.filter(e => e.member_id === membro.id) || [];
-    const qtdEstudos = est.reduce((s, e) => s + (e.study_count || 0), 0);
-    const hrs = atividades?.filter(a => a.member_id === membro.id) || [];
-    const somaHoras = hrs.reduce((s, a) => s + (a.hours || 0), 0);
-    
+  let totalEstudos = 0;
+
+  if (!lista.length) {
+    corpo.innerHTML =
+      '<tr><td colspan="4">Sem membros nesta categoria.</td></tr>';
+  }
+
+  lista.forEach(membro => {
+    const atv = atividades.filter(
+      a => a.member_id === membro.id
+    );
+
+    const est = estudos.filter(
+      e => e.member_id === membro.id
+    );
+
+    const horas = atv.reduce(
+      (s, a) => s + Number(a.hours || 0), 0
+    );
+
+    const qtdEstudos = est.reduce(
+      (s, e) => s + Number(e.study_count || 0), 0
+    );
+
+    totalHoras += horas;
     totalEstudos += qtdEstudos;
-    totalHoras += somaHoras;
-    
-    corpo.innerHTML += `
-      <tr>
-        <td>${membro.name}</td>
-        <td>${qtdEstudos}</td>
-        <td>${somaHoras.toFixed(2)}</td>
-        <td>${somaHoras.toFixed(2)}</td>
-      </tr>
-    `;
+
+    const linha = document.createElement('tr');
+
+    [
+      membro.name,
+      qtdEstudos,
+      horas.toFixed(2),
+      atv.length > 0 ? 'Sim' : 'Não'
+    ].forEach(texto => {
+      const td = document.createElement('td');
+      td.textContent = String(texto);
+      linha.appendChild(td);
+    });
+
+    corpo.appendChild(linha);
   });
-  
-  const elEstudos = document.getElementById(`${prefixoRodape}-estudos`);
-  const elHoras = document.getElementById(`${prefixoRodape}-horas`);
-  const elTotal = document.getElementById(`${prefixoRodape}-total`);
-  
-  if (elEstudos) elEstudos.textContent = totalEstudos;
-  if (elHoras) elHoras.textContent = totalHoras.toFixed(2);
-  if (elTotal) elTotal.textContent = totalHoras.toFixed(2);
+
+  const campos = {
+    estudos: `${prefixo}-estudos`,
+    horas: `${prefixo}-horas`,
+    total: `${prefixo}-total`
+  };
+
+  if (el(campos.estudos))
+    el(campos.estudos).textContent = totalEstudos;
+
+  if (el(campos.horas))
+    el(campos.horas).textContent = totalHoras.toFixed(2);
+
+  if (el(campos.total))
+    el(campos.total).textContent = totalHoras.toFixed(2);
 }
 
-function somarEstudos(lista, estudos) {
-  return lista.reduce((s, m) => {
-    const est = estudos?.filter(e => e.member_id === m.id) || [];
-    return s + est.reduce((sum, e) => sum + (e.study_count || 0), 0);
-  }, 0);
-}
-
-function somarHoras(lista, atividades) {
-  return lista.reduce((s, m) => {
-    const atv = atividades?.filter(a => a.member_id === m.id) || [];
-    return s + atv.reduce((sum, a) => sum + (a.hours || 0), 0);
-  }, 0);
-}
-
-function limparTabelas() {
-  ['tbl-regulares', 'tbl-auxiliares', 'tbl-publicadores'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = '<tr><td colspan="4">Selecione um grupo...</td></tr>';
-  });
-  
-  ['sub-reg', 'sub-aux', 'sub-pub'].forEach(prefixo => {
-    const e1 = document.getElementById(`${prefixo}-estudos`);
-    const e2 = document.getElementById(`${prefixo}-horas`);
-    const e3 = document.getElementById(`${prefixo}-total`);
-    if (e1) e1.textContent = '0';
-    if (e2) e2.textContent = '0';
-    if (e3) e3.textContent = '0';
-  });
-  
-  const tEstudos = document.getElementById('total-estudos');
-  const tHoras = document.getElementById('total-horas');
-  if (tEstudos) tEstudos.textContent = '0';
-  if (tHoras) tHoras.textContent = '0';
-}
+// =====================================================
+// LISTA DE MEMBROS
+// =====================================================
 
 function preencherListaMembros(membros) {
-  const sel = document.getElementById('act-membro');
-  if (!sel || !membros) return;
-  
-  sel.innerHTML = '<option value="">-- Selecione uma pessoa --</option>';
+  const select = el('act-membro');
+  if (!select) return;
+
+  select.innerHTML =
+    '<option value="">-- Selecione uma pessoa --</option>';
+
   membros.forEach(m => {
-    sel.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+    const opcao = document.createElement('option');
+    opcao.value = m.id;
+    opcao.textContent = m.name;
+    select.appendChild(opcao);
   });
 }
 
-// ======================================
-// ➕ GUARDAR NOVA ATIVIDADE
-// ======================================
+// =====================================================
+// OBTER OU CRIAR RELATÓRIO
+// =====================================================
+
+async function obterRelatorio(grupoId, categoria, dataMes) {
+  const { data, error } = await SB
+    .from(T_RELATORIOS)
+    .select('id')
+    .eq('group_id', grupoId)
+    .eq('report_month', dataMes)
+    .eq('category', categoria)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (data) return data.id;
+
+  const { data: novo, error: erroNovo } = await SB
+    .from(T_RELATORIOS)
+    .insert({
+      group_id: grupoId,
+      report_month: dataMes,
+      category: categoria,
+      hours: 0,
+      studies: 0
+    })
+    .select('id')
+    .single();
+
+  if (erroNovo) throw erroNovo;
+
+  return novo.id;
+}
+
+// =====================================================
+// GUARDAR ATIVIDADE
+// =====================================================
+
 async function guardarAtividade() {
-  const membroId = document.getElementById('act-membro')?.value;
-  const data = document.getElementById('act-data')?.value;
-  const saida = document.getElementById('act-saida')?.value;
-  const regresso = document.getElementById('act-regresso')?.value;
-  const qtdEstudos = parseInt(document.getElementById('act-estudos')?.value) || 0;
-  const grupoId = document.getElementById('sel-grupo')?.value;
-  const mes = parseInt(document.getElementById('rel-mes')?.value);
-  const ano = parseInt(document.getElementById('rel-ano')?.value);
-  
+  if (!acessoPermitido)
+    return alert('Acesso não autorizado.');
+
+  const membroId = valor('act-membro');
+  const data = valor('act-data');
+  const saida = valor('act-saida');
+  const regresso = valor('act-regresso');
+  const qtdEstudos = Number(valor('act-estudos', 0));
+  const grupoId = valor('sel-grupo');
+
   if (!membroId || !data || !saida || !regresso) {
-    alert("⚠️ Preenche todos os campos obrigatórios!");
-    return;
+    return alert('Preencha todos os campos obrigatórios.');
   }
-  
+
+  if (!Number.isInteger(qtdEstudos) || qtdEstudos < 0) {
+    return alert('Número de estudos inválido.');
+  }
+
+  const horas = calcularDuracao(saida, regresso);
+
+  if (horas <= 0) {
+    return alert('Verifique as horas de saída e regresso.');
+  }
+
+  const membro = membrosAtuais.find(m => m.id === membroId);
+
+  if (!membro) return alert('Membro não encontrado.');
+
+  const categoria = categoriaValida(membro.category);
+
+  if (!categoria) return alert('Categoria inválida.');
+
   try {
-    let { data: relatorio, error: erroRel } = await SB
-      .from('field_reports')
-      .select('id')
-      .eq('group_id', grupoId)
-      .eq('report_month', mes)
-      .eq('report_year', ano)
-      .maybeSingle();
-    
-    let relatorioId;
-    if (!relatorio) {
-      const { data: novo, error: e } = await SB
-        .from('field_reports')
-        .insert({ group_id: grupoId, report_month: mes, report_year: ano })
-        .select()
-        .single();
-      relatorioId = novo.id;
-    } else {
-      relatorioId = relatorio.id;
+    const periodo = obterPeriodo();
+
+    if (
+      data.slice(0, 7) !==
+      `${periodo.ano}-${String(periodo.mes).padStart(2, '0')}`
+    ) {
+      return alert('A data deve pertencer ao mês selecionado.');
     }
-    
-    const { error: erroAtividade } = await SB.from('field_activities').insert({
-      report_id: relatorioId,
-      member_id: membroId,
-      activity_date: data,
-      time_out: saida,
-      time_in: regresso,
-      hours: 0
-    });
-    
-    if (erroAtividade) throw erroAtividade;
-    
+
+    const relatorioId = await obterRelatorio(
+      grupoId,
+      categoria,
+      periodo.data
+    );
+
+    const { error } = await SB
+      .from(T_ATIVIDADES)
+      .insert({
+        report_id: relatorioId,
+        member_id: membroId,
+        activity_date: data,
+        time_out: saida,
+        time_in: regresso,
+        hours: horas
+      });
+
+    if (error) throw error;
+
     if (qtdEstudos > 0) {
-      const { data: existente } = await SB
-        .from('studies')
+      const { data: existente, error: buscaError } = await SB
+        .from(T_ESTUDOS)
         .select('id, study_count')
         .eq('report_id', relatorioId)
         .eq('member_id', membroId)
         .maybeSingle();
-      
+
+      if (buscaError) throw buscaError;
+
       if (existente) {
-        await SB.from('studies').update({
-          study_count: existente.study_count + qtdEstudos
-        }).eq('id', existente.id);
+        const { error: updateError } = await SB
+          .from(T_ESTUDOS)
+          .update({
+            study_count:
+              Number(existente.study_count || 0) + qtdEstudos
+          })
+          .eq('id', existente.id);
+
+        if (updateError) throw updateError;
+
       } else {
-        await SB.from('studies').insert({
-          report_id: relatorioId,
-          member_id: membroId,
-          study_count: qtdEstudos
-        });
+        const { error: insertError } = await SB
+          .from(T_ESTUDOS)
+          .insert({
+            report_id: relatorioId,
+            member_id: membroId,
+            study_count: qtdEstudos
+          });
+
+        if (insertError) throw insertError;
       }
     }
-    
-    alert("✅ Registo guardado com sucesso!");
-    
-    document.getElementById('act-membro').value = '';
-    document.getElementById('act-data').value = '';
-    document.getElementById('act-saida').value = '';
-    document.getElementById('act-regresso').value = '';
-    document.getElementById('act-estudos').value = '0';
-    document.getElementById('act-horas').value = '';
-    
-    carregarRelatorio();
-    
+
+    alert('Registo guardado com sucesso!');
+
+    [
+      'act-membro',
+      'act-data',
+      'act-saida',
+      'act-regresso'
+    ].forEach(id => {
+      if (el(id)) el(id).value = '';
+    });
+
+    if (el('act-estudos')) el('act-estudos').value = '0';
+    if (el('act-horas')) el('act-horas').value = '';
+
+    await carregarRelatorio();
+
   } catch (erro) {
     console.error(erro);
-    alert("❌ Erro ao guardar: " + erro.message);
+    alert('Erro ao guardar: ' + erro.message);
   }
 }
 
-// ======================================
-// 🔑 CÁLCULO DE HORAS NO FORMULÁRIO
-// ======================================
+// =====================================================
+// CÁLCULO AUTOMÁTICO DE HORAS
+// =====================================================
+
 function calcularHorasFormulario() {
-  const saida = document.getElementById('act-saida')?.value;
-  const regresso = document.getElementById('act-regresso')?.value;
-  const campoHoras = document.getElementById('act-horas');
-  
-  if (!saida || !regresso || !campoHoras) {
-    if (campoHoras) campoHoras.value = '';
+  const saida = valor('act-saida');
+  const regresso = valor('act-regresso');
+  const campo = el('act-horas');
+
+  if (!campo) return;
+
+  if (!saida || !regresso) {
+    campo.value = '';
     return;
   }
-  
-  const [h1, m1] = saida.split(':').map(Number);
-  const [h2, m2] = regresso.split(':').map(Number);
-  
-  const totalMin = (h2 * 60 + m2) - (h1 * 60 + m1);
-  const horas = (totalMin / 60).toFixed(2);
-  
-  campoHoras.value = horas + 'h';
+
+  campo.value = calcularDuracao(saida, regresso).toFixed(2) + 'h';
 }
 
-// Eventos
-document.addEventListener('change', function(e) {
-  if (e.target.id === 'act-saida' || e.target.id === 'act-regresso') {
-    calcularHorasFormulario();
-  }
-  if (e.target.id === 'sel-grupo' || e.target.id === 'rel-mes' || e.target.id === 'rel-ano') {
-    carregarRelatorio();
-  }
+// =====================================================
+// LIMPAR TABELAS
+// =====================================================
+
+function limparTabelas() {
+  [
+    'tbl-regulares',
+    'tbl-auxiliares',
+    'tbl-publicadores'
+  ].forEach(id => {
+    if (el(id)) {
+      el(id).innerHTML =
+        '<tr><td colspan="4">Selecione um grupo...</td></tr>';
+    }
+  });
+
+  [
+    'sub-reg',
+    'sub-aux',
+    'sub-pub'
+  ].forEach(prefixo => {
+    ['estudos', 'horas', 'total'].forEach(tipo => {
+      if (el(`${prefixo}-${tipo}`))
+        el(`${prefixo}-${tipo}`).textContent = '0';
+    });
+  });
+
+  ['total-estudos', 'total-horas', 'total-saidas'].forEach(id => {
+    if (el(id)) el(id).textContent = '0';
+  });
+}
+
+// =====================================================
+// EVENTOS
+// =====================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('R-MALOWA SENA 2.0 carregado.');
+
+  ['act-saida', 'act-regresso'].forEach(id => {
+    el(id)?.addEventListener('change', calcularHorasFormulario);
+  });
+
+  ['sel-grupo', 'rel-mes', 'rel-ano'].forEach(id => {
+    el(id)?.addEventListener('change', carregarRelatorio);
+  });
 });
