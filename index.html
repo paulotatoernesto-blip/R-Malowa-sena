@@ -648,7 +648,11 @@ function atualizarPainel() {
 // SEGURANÇA E GESTÃO DA PASTA PRIVADA
 // =============================================
 
-// ABRIR PASTA PRIVADA
+
+// ============================================
+// PASTA PRIVADA — R-MALOWA SENA 2.0
+// ============================================
+
 async function abrirPastaPrivada() {
     const senha = document.getElementById('private-password').value;
     const erro = document.getElementById('private-error');
@@ -656,45 +660,50 @@ async function abrirPastaPrivada() {
     erro.style.display = 'none';
 
     if (!senha) {
-        erro.textContent = 'Introduza a senha.';
+        erro.textContent = 'Introduza a palavra-passe.';
         erro.style.display = 'block';
         return;
     }
 
     try {
-        const { data, error } = await SB.functions.invoke(
-            'private-folder-access',
+        const { data, error } = await SB.rpc(
+            'verify_private_access',
             {
-                body: {
-                    action: 'unlock',
-                    password: senha
-                }
+                p_password: senha
             }
         );
 
         if (error) throw error;
 
-        if (data && data.authorized === true) {
+        if (data === true) {
             document.getElementById('private-locked').style.display = 'none';
             document.getElementById('private-content').style.display = 'block';
             document.getElementById('private-password').value = '';
         } else {
-            erro.textContent = 'Senha incorreta ou acesso não autorizado.';
+            erro.textContent = 'Palavra-passe incorreta ou acesso não autorizado.';
             erro.style.display = 'block';
         }
 
     } catch (error) {
         console.error('Erro na Pasta Privada:', error);
-        erro.textContent = 'Não foi possível verificar o acesso.';
+        erro.textContent = 'Não foi possível verificar o acesso. Verifique a ligação.';
         erro.style.display = 'block';
     }
 }
 
+// ============================================
 // FECHAR PASTA PRIVADA
+// ============================================
+
 function fecharPastaPrivada() {
     document.getElementById('private-locked').style.display = 'block';
     document.getElementById('private-content').style.display = 'none';
     document.getElementById('private-password').value = '';
+}
+
+
+
+// 
 }
 
 // =============================================
