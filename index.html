@@ -316,6 +316,229 @@
 <script>
 // TODO O CÓDIGO JAVASCRIPT QUE TE ENVIEI A SEGUIR
 </script>
+<script>
+// ========== SISTEMA DE ABAS ==========
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        const tabId = this.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+    });
+});
+
+// ========== DADOS LOCAIS ==========
+let dados = {
+    grupos: [],
+    membros: [],
+    contribuicoes: [],
+    receitas: [],
+    despesas: [],
+    relatorios: [],
+    utilizadores: [],
+    senhaPrivada: 'malowa2026'
+};
+
+function salvarDados() {
+    localStorage.setItem('malowa_sena_dados', JSON.stringify(dados));
+}
+
+function carregarDados() {
+    const guardado = localStorage.getItem('malowa_sena_dados');
+    if (guardado) {
+        dados = JSON.parse(guardado);
+        atualizarTudo();
+    }
+}
+
+function gerarId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+function atualizarTudo() {
+    atualizarListaGrupos();
+    atualizarListaMembros();
+    atualizarSelects();
+    atualizarPainel();
+}
+
+function atualizarSelects() {
+    const grupoOptions = '<option value="">-- Selecione o grupo --</option>' + 
+        dados.grupos.map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
+    
+    const selects = ['member-group', 'contrib-group', 'report-group', 'stats-group', 'user-group'];
+    selects.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = grupoOptions;
+    });
+
+    const filterSelect = document.getElementById('filter-group');
+    if (filterSelect) {
+        filterSelect.innerHTML = '<option value="">-- Todos os grupos --</option>' + 
+            dados.grupos.map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
+    }
+}
+
+// ========== GRUPOS ==========
+function criarGrupo() {
+    const nome = document.getElementById('group-name').value.trim();
+    const rep = document.getElementById('group-rep').value.trim();
+    const telefone = document.getElementById('group-phone').value.trim();
+    const area = document.getElementById('group-area').value.trim();
+
+    if (!nome) { alert('⚠️ Digite o nome do grupo!'); return; }
+
+    dados.grupos.push({
+        id: gerarId(),
+        nome,
+        representante: rep,
+        telefone,
+        area,
+        data: new Date().toLocaleDateString()
+    });
+    
+    salvarDados();
+    atualizarListaGrupos();
+    atualizarSelects();
+    atualizarPainel();
+    
+    document.getElementById('group-name').value = '';
+    document.getElementById('group-rep').value = '';
+    document.getElementById('group-phone').value = '';
+    document.getElementById('group-area').value = '';
+    
+    alert('✅ Grupo guardado com sucesso!');
+}
+
+function atualizarListaGrupos() {
+    const lista = document.getElementById('groups-list');
+    if (!lista) return;
+    
+    if (dados.grupos.length === 0) {
+        lista.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888;">Ainda sem grupos registados</td></tr>';
+        return;
+    }
+    
+    lista.innerHTML = dados.grupos.map(grupo => `
+        <tr>
+            <td><strong>${grupo.nome}</strong></td>
+            <td>${grupo.representante || '—'}</td>
+            <td>${grupo.telefone || '—'}</td>
+            <td>${grupo.area || '—'}</td>
+            <td><span class="tag tag-green">Ativo</span></td>
+            <td>
+                <button class="btn" style="padding:4px 8px; font-size:12px; background:#f44336; color:white; border:none; border-radius:3px;" onclick="apagarGrupo('${grupo.id}')">Apagar</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function apagarGrupo(id) {
+    if (confirm('Tens a certeza que queres apagar este grupo?')) {
+        dados.grupos = dados.grupos.filter(g => g.id !== id);
+        salvarDados();
+        atualizarTudo();
+    }
+}
+
+// ========== MEMBROS ==========
+function adicionarMembro() {
+    const grupoId = document.getElementById('member-group').value;
+    const nome = document.getElementById('member-name').value.trim();
+    const telefone = document.getElementById('member-phone').value.trim();
+    const categoria = document.getElementById('member-category').value;
+
+    if (!grupoId || !nome || !categoria) { 
+        alert('⚠️ Preenche o grupo, o nome e a categoria!'); 
+        return; 
+    }
+
+    dados.membros.push({
+        id: gerarId(),
+        grupoId,
+        nome,
+        telefone,
+        categoria,
+        data: new Date().toLocaleDateString()
+    });
+    
+    salvarDados();
+    atualizarListaMembros();
+    atualizarPainel();
+    
+    document.getElementById('member-name').value = '';
+    document.getElementById('member-phone').value = '';
+    document.getElementById('member-category').value = '';
+    
+    alert('✅ Membro adicionado com sucesso!');
+}
+
+function atualizarListaMembros() {
+    const lista = document.getElementById('members-list');
+    if (!lista) return;
+    
+    if (dados.membros.length === 0) {
+        lista.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#888;">Ainda sem membros registados</td></tr>';
+        return;
+    }
+    
+    const catNomes = {
+        'regular': '🟢 Pioneiro Regular',
+        'auxiliary': '🟡 Pioneiro Auxiliar',
+        'publisher': '🟠 Publicador'
+    };
+    
+    lista.innerHTML = dados.membros.map(m => {
+        const grupo = dados.grupos.find(g => g.id === m.grupoId);
+        return `
+        <tr>
+            <td>${m.nome}</td>
+            <td>${grupo ? grupo.nome : '—'}</td>
+            <td>${catNomes[m.categoria] || m.categoria}</td>
+            <td>${m.telefone || '—'}</td>
+            <td><span class="tag tag-green">Ativo</span></td>
+        </tr>
+        `;
+    }).join('');
+}
+
+// ========== PAINEL PRINCIPAL ==========
+function atualizarPainel() {
+    const el = (id) => document.getElementById(id);
+    
+    if (el('total-groups')) el('total-groups').textContent = dados.grupos.length;
+    if (el('total-members')) el('total-members').textContent = dados.membros.length;
+    
+    const reg = dados.membros.filter(m => m.categoria === 'regular').length;
+    const aux = dados.membros.filter(m => m.categoria === 'auxiliary').length;
+    const pub = dados.membros.filter(m => m.categoria === 'publisher').length;
+    
+    if (el('total-pioneers')) el('total-pioneers').textContent = reg + aux;
+    if (el('total-publishers')) el('total-publishers').textContent = pub;
+}
+
+// ========== PASTA PRIVADA ==========
+function abrirPastaPrivada() {
+    const senha = document.getElementById('private-password').value;
+    if (senha === dados.senhaPrivada) {
+        document.getElementById('private-locked').style.display = 'none';
+        document.getElementById('private-content').style.display = 'block';
+        document.getElementById('private-error').style.display = 'none';
+    } else {
+        document.getElementById('private-error').style.display = 'block';
+    }
+}
+
+function fecharPastaPrivada() {
+    document.getElementById('private-locked').style.display = 'block';
+    document.getElementById('private-content').style.display = 'none';
+    document.getElementById('private-password').value = '';
+}
+
+// ========== INICIALIZAR ==========
+carregarDados();
+</script>
 
 </body>
 </html>
