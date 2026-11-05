@@ -374,5 +374,85 @@ document.addEventListener("DOMContentLoaded", async () => {
                 utilizadorActual = session?.user || null;
             }
         );
+  
+/* =====================================================
+   MÓDULO DE MEMBROS — R-MALOWA SENA 2.0
+   ===================================================== */
+
+async function listarMembros() {
+    const area = document.getElementById("lista-membros");
+    if (!area) return;
+
+    area.textContent = "A carregar membros...";
+
+    try {
+        const { data, error } = await supabaseClient
+            .from("members")
+            .select("*")
+            .order("name", { ascending: true });
+
+        if (error) throw error;
+
+        area.replaceChildren();
+
+        if (!data || data.length === 0) {
+            area.textContent = "Ainda não existem membros registados.";
+            return;
+        }
+
+        data.forEach(membro => {
+            const linha = document.createElement("div");
+            linha.className = "grupo-item";
+            linha.textContent =
+                `${membro.name || "Sem nome"} — ${membro.category || "Categoria não definida"}`;
+            area.appendChild(linha);
+        });
+
+    } catch (erro) {
+        console.error(erro);
+        area.textContent = "Erro ao carregar membros: " + erro.message;
     }
+}
+
+async function pesquisarMembros() {
+    const pesquisa = document.getElementById("pesquisa-membro");
+    const area = document.getElementById("lista-membros");
+
+    if (!pesquisa || !area) return;
+
+    const termo = pesquisa.value.trim();
+
+    try {
+        let consulta = supabaseClient
+            .from("members")
+            .select("*")
+            .order("name", { ascending: true });
+
+        if (termo) {
+            consulta = consulta.ilike("name", `%${termo}%`);
+        }
+
+        const { data, error } = await consulta;
+
+        if (error) throw error;
+
+        area.replaceChildren();
+
+        (data || []).forEach(membro => {
+            const linha = document.createElement("div");
+            linha.className = "grupo-item";
+            linha.textContent = membro.name || "Sem nome";
+            area.appendChild(linha);
+        });
+
+        if (!data || data.length === 0) {
+            area.textContent = "Nenhum membro encontrado.";
+        }
+
+    } catch (erro) {
+        console.error(erro);
+        area.textContent = "Não foi possível pesquisar os membros.";
+    }
+}
+  }
 });
